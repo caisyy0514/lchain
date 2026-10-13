@@ -11,9 +11,10 @@ logs/
 tools/bin/
 
 # 视频工程的渲染产物（体积很大，只提交源码）
-promo-video/.venv/
+promo-video/.venv
 promo-video/output/
-promo-video-consult/.venv/
+promo-video-consult/.venv
 promo-video-consult/output/
-promo-video-fd/.venv/
+promo-video-fd/.venv
 promo-video-fd/output/
+dist/

@@ -1,0 +1,22 @@
+[Unit]
+Description=LChain Agent scheduler (single instance, MySQL advisory lock)
+Documentation=file:///opt/lchain/docs/migrate-to-server.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lchain
+Group=lchain
+WorkingDirectory=/opt/lchain
+EnvironmentFile=/opt/lchain/.env
+ExecStart=/opt/lchain/.venv/bin/python -m app.scheduler
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=30
+StandardOutput=append:/opt/lchain/logs/scheduler.out
+StandardError=append:/opt/lchain/logs/scheduler.out
+
+[Install]
+WantedBy=multi-user.target

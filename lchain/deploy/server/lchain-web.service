@@ -1,0 +1,23 @@
+[Unit]
+Description=LChain Agent web (uvicorn)
+Documentation=file:///opt/lchain/docs/migrate-to-server.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lchain
+Group=lchain
+WorkingDirectory=/opt/lchain
+EnvironmentFile=/opt/lchain/.env
+ExecStart=/opt/lchain/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=40
+# 日志：程序自己按 LOG_DIR 写 app.log / error.log / access.log；这里保留 stdout 兜底
+StandardOutput=append:/opt/lchain/logs/web.out
+StandardError=append:/opt/lchain/logs/web.out
+
+[Install]
+WantedBy=multi-user.target
