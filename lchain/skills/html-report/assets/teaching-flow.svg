@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="720" viewBox="0 0 680 720">
+  <title>报告讲解流程示意图</title>
+  <desc>从原始资料到解释，再结合科学证据形成建议。本图是结构示意，不是临床影像。</desc>
+  <rect width="680" height="720" fill="#ffffff"/>
+  <path d="M34 28 H646" stroke="#19364d" stroke-width="2"/>
+  <g font-family="sans-serif">
+    <text x="34" y="84" font-size="38" font-weight="600" fill="#19364d">医学报告的解释链</text>
+    <text x="34" y="124" font-size="23" fill="#61717d">由观测出发，让解释有边界，让建议有依据。</text>
+    <path d="M62 198 V570" stroke="#b8c7d0" stroke-width="2"/>
+    <g fill="#19364d"><circle cx="62" cy="198" r="25"/><circle cx="62" cy="322" r="25"/><circle cx="62" cy="570" r="25"/></g>
+    <circle cx="62" cy="446" r="25" fill="#007f7a"/>
+    <g fill="#fff" font-size="19" text-anchor="middle"><text x="62" y="205">01</text><text x="62" y="329">02</text><text x="62" y="453">03</text><text x="62" y="577">04</text></g>
+    <g fill="#19364d" font-size="32" font-weight="500"><text x="116" y="207">原始资料</text><text x="116" y="331">结果解释</text><text x="116" y="455">科学证据</text><text x="116" y="579">行动建议</text></g>
+    <g fill="#61717d" font-size="25"><text x="116" y="248">事实 · 日期 · 单位</text><text x="116" y="372">变化 · 缺测 · 局限</text><text x="116" y="496">来源 · 人群 · 时效</text><text x="116" y="620">问题 · 沟通 · 随访</text></g>
+    <path d="M116 276 H646 M116 400 H646 M116 524 H646 M34 655 H646" stroke="#dce3e7"/>
+    <text x="34" y="690" font-size="22" fill="#61717d">教学结构示意，非临床影像或医学证据</text>
+  </g>
+</svg>

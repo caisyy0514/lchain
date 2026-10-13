@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>企微群「家庭医生 Agent」项目概述（汇报版）</title>
+<style>
+  @page { size: A4; margin: 15mm 14mm 16mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: #1f2937; background: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 10.5pt; line-height: 1.68; }
+  h1 { margin: 0 0 4px; font-size: 19pt; letter-spacing: -.01em; color: #0b1220; }
+  .sub { color: #667085; font-size: 9.5pt; margin-bottom: 14px; }
+  .quote { padding: 10px 12px; border-left: 4px solid #0f559e; background: #f5f9ff; border-radius: 0 8px 8px 0; font-size: 10.5pt; color: #1e3a5f; margin: 10px 0 14px; }
+  .quote b { color: #0f559e; }
+  h2 { font-size: 13pt; margin: 20px 0 8px; padding-left: 8px; border-left: 4px solid #0f559e; color: #101828; }
+  h3 { font-size: 11pt; margin: 12px 0 4px; color: #101828; }
+  p { margin: 6px 0; }
+  ul, ol { margin: 6px 0; padding-left: 20px; }
+  li { margin: 3px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 8px 0; page-break-inside: avoid; }
+  th, td { border: 1px solid #d0d5dd; padding: 6px 8px; vertical-align: top; text-align: left; }
+  th { background: #f2f4f7; font-weight: 600; color: #344054; }
+  .box { padding: 10px 12px; border: 1px solid #b2ddff; background: #f0f9ff; border-radius: 8px; margin: 10px 0; page-break-inside: avoid; }
+  .box ul { margin: 4px 0 0; }
+  .box li { margin: 4px 0; }
+  .fact { color: #0f559e; font-weight: 600; }
+  .warn { color: #b42318; }
+  figure { margin: 12px 0; text-align: center; page-break-inside: avoid; }
+  figure img { width: 76mm; border: 1px solid #e4e7ec; border-radius: 6px; }
+  figcaption { margin-top: 5px; color: #667085; font-size: 9pt; }
+  .appendix { page-break-before: always; }
+  .appendix figure img { width: 100%; border-radius: 0; }
+  .foot { margin-top: 18px; padding-top: 8px; border-top: 1px solid #eaecf0; color: #98a2b3; font-size: 8.5pt; }
+</style>
+</head>
+<body>
+
+<h1>企微群「家庭医生 Agent」项目概述</h1>
+<div class="sub">汇报版 · 2026 年 10 月 · 附真实卡片示例</div>
+
+<div class="quote">
+  <b>一句话：</b>在患者已有的企微服务群里，用「硬安全门控 + 多轮问诊」生成一张真人医生审核过的<b>就医规划卡</b>——什么时候、去哪家医院、做什么、花多少钱，一目了然；轻症转居家观察闭环，重症立即升级。
+</div>
+
+<h2>30 秒版</h2>
+<div class="box">
+  <ul>
+    <li><b>是什么</b>：企微群里的 AI 家庭医生——把一句话咨询变成可执行的就医安排，而不是一句“建议就医”。</li>
+    <li><b>到哪了</b>：Demo 已完成，10 个分级样例群真实跑通，355 项测试、34 个评测用例；患者端手机卡片已可体验。</li>
+    <li><b>为什么值得投</b>：安全可控（红旗硬门控 + 真人医生审核）、能省钱（同方案下合理分流）、可规模化（每张卡片都是一次可追踪的服务履约）。</li>
+    <li><b>需要支持</b>：① 安排医学组审核规则与路径；② 批准 1–2 个真实群灰度试点；③ 协调机构/号源/医保数据接入。</li>
+  </ul>
+</div>
+
+<h2>一、要解决的问题</h2>
+<table>
+  <tr><th style="width:46%">现状痛点</th><th>后果</th></tr>
+  <tr><td>群里咨询靠人工凭经验回复，质量不稳定</td><td>回复不一致、不可审计，患者体验差</td></tr>
+  <tr><td>患者不知道「去哪一级医院、做什么检查」</td><td>小病挤三甲、大病被拖延，医疗资源错配</td></tr>
+  <tr><td>费用不透明，不知道医保能报多少</td><td>患者多花冤枉钱，服务方难以证明价值</td></tr>
+  <tr><td>群消息 7×24 无人即时响应</td><td>延误风险 + 病历经理人力被重复问题占满</td></tr>
+</table>
+
+<h2>二、产品是什么</h2>
+<p>给患者的不是一句「建议就医」，而是一张<b>可执行的就医规划卡</b>：</p>
+<ol>
+  <li><b>首屏决策</b>：一句建议（含具体医院名）+ 关键事实（级别/距离/医保/预约状态）</li>
+  <li><b>任务清单</b>：每条任务都必须讲清<b>四要素</b>——任务、时间、地点、花费；预约入口可一键复制</li>
+  <li><b>安全底线</b>：风险信号合并去重后按「立即 120 / 今天内 / 尽快」分级展示</li>
+  <li><b>在哪看更划算</b>：推荐机构与升级机构做四维对照（医学能力 / 检查方案 / 路程 / 个人自付），并给出「少花 X 元」结论</li>
+  <li><b>依据可查</b>：疑似诊断及依据、重点排除风险、如何确诊、为什么这样安排——折叠展示，点开即有</li>
+</ol>
+
+<figure>
+  <img src="assets/plan-card-e3-top.png" alt="就医规划卡首屏" />
+  <figcaption>真实样例 E3 卡片首屏：具体医院、任务四要素、安全提醒、费用对比（完整卡片见附录）</figcaption>
+</figure>
+
+<h2>三、核心机制（为什么可信）</h2>
+<ol>
+  <li><b>硬安全门控</b>：<span class="fact">28 条红旗规则</span>确定性筛查，先于大模型判断；模型不得把紧急程度降级（服务端强制），命中高危不等待模型直接给已审行动</li>
+  <li><b>多轮问诊</b>：普通病例至少 2 轮、最多 4 轮追问后才给结论，信息不足时只问“最能改变去向”的问题</li>
+  <li><b>确定性患者视图</b>：卡片内容由服务端从结构化计划<b>投影生成</b>，模型不重写临床方案，并通过语义一致性门控校验</li>
+  <li><b>闭环与可追溯</b>：轻症创建居家观察任务（到点主动回访、未回复催办、超期强制复评）；消息发送幂等、断点续跑、全链路执行留痕</li>
+</ol>
+
+<h2>四、当前进展（可演示、可验证）</h2>
+<table>
+  <tr><th style="width:22%">维度</th><th>进展</th></tr>
+  <tr><td>分级能力</td><td>覆盖 E0 立即急救 / E1 尽快急诊 / E2 当日 / E3 限时 / E4 门诊·观察 / E5 复诊 / EU 人工复核</td></tr>
+  <tr><td>样例群</td><td><b>10 个样例群</b>已用真实模型完整跑通（含 3 个急救、2 个居家观察带主动回访）</td></tr>
+  <tr><td>自动化测试</td><td><b>355 项</b>测试（含前端渲染器、安全门控、契约不变量、去重与旧消息回退）</td></tr>
+  <tr><td>评测体系</td><td><b>34 个评测用例</b>（企微 13 + 问诊/山区 21），支持批量跑批与回归</td></tr>
+  <tr><td>知识资产</td><td>28 条红旗规则、3 条已批准低风险路径、21 类风险→危险信号知识表（均标注审批状态）</td></tr>
+  <tr><td>交付链路</td><td>企微发送端 webhook（结构化卡片 + 患者 H5 链接）、患者端 H5、群内测试页三端同源</td></tr>
+  <tr><td>体验验证</td><td>390px 手机实机渲染、任务勾选与复制交互、卡片导出为图片</td></tr>
+</table>
+
+<h2>五、价值</h2>
+<h3>对患者</h3>
+<ul>
+  <li>知道「现在做什么、去哪、花多少」，不再两头跑</li>
+  <li>安全底线直接可见（出现什么症状立即 120），不会因等回复耽误</li>
+  <li>示例：同一次门诊，推荐二级医院自付 <b>¥130</b>，升级三级 <b>¥230</b>——<b>方案一致，少花 ¥100</b>（演示医保参数）</li>
+</ul>
+<h3>对服务方（业务）</h3>
+<ul>
+  <li>病历经理从重复答疑中解放，聚焦高价值人工介入</li>
+  <li>回复标准统一、可审计，服务质量可控</li>
+  <li>每张卡片都是一次可追踪的服务履约，便于续费与增值</li>
+</ul>
+<h3>对支付方 / 客户价值主张</h3>
+<ul>
+  <li>合理分流：能力够用的场景不去高级别医院，降低整体医疗支出</li>
+  <li>VBC 分级诊疗从理念变成可执行的触达工具（卡片即干预点）</li>
+</ul>
+
+<h2>六、合规边界（明确不做什么）</h2>
+<ul>
+  <li><span class="warn">不诊断、不调药、不编造</span>医院/号源/费用；推荐机构与医保参数当前为<b>演示数据</b>，卡片带免责说明</li>
+  <li>红旗规则、低风险路径、风险信号知识表当前为演示版本，状态 <code>DEMO_PENDING_CLINICAL_REVIEW</code>，<b>上线前必须医学组审核</b></li>
+  <li>非急症结论标记「已提交平台医生审核」，不引导患者另行线上问诊</li>
+</ul>
+
+<h2>七、下一步与需要的支持</h2>
+<p><b>需要您拍板的三件事：</b></p>
+<ol>
+  <li><b>安排医学审核资源</b>：审核 28 条红旗规则、3 条观察路径、21 类危险信号（当前为演示版，未审不能放行）</li>
+  <li><b>批准试点</b>：选 1–2 个真实企微群灰度（SHADOW 只记录不发送 → 医生协助 → 正式放行）</li>
+  <li><b>协调数据接入</b>：当地机构能力目录、号源/预约入口、医保报销参数（当前为演示数据，接入后才能给出真实推荐与测算）</li>
+</ol>
+<table>
+  <tr><th style="width:18%">事项</th><th style="width:18%">需要谁</th><th>说明</th></tr>
+  <tr><td>① 医学审核</td><td>医学组</td><td>决定能否从 Demo 进入试点</td></tr>
+  <tr><td>② 数据接入</td><td>商务/数据</td><td>替换演示机构与医保参数</td></tr>
+  <tr><td>③ 试点灰度</td><td>产品/运营</td><td>真实群分阶段放行，先观察再发送</td></tr>
+  <tr><td>④ 发送端对接</td><td>研发</td><td>企微发送端按 card 字段渲染，或直接使用患者 H5 链接</td></tr>
+  <tr><td>⑤ 指标定义</td><td>产品/医学</td><td>分流准确率、漏升级率、就医依从率、人均医疗支出变化、回复时效</td></tr>
+</table>
+<p><b>里程碑</b>：Demo（已完成，可演示）→ 医学审核与数据接入（进行中）→ 试点群灰度 → 放行与规模化。</p>
+
+<h2>附：汇报演示入口</h2>
+<ul>
+  <li>患者端卡片（手机）：<code>http://&lt;本机局域网IP&gt;:8000/wecom-card/&lt;消息ID&gt;</code></li>
+  <li>企微群测试页：<code>http://&lt;本机局域网IP&gt;:8000/wecom</code>（桌面）</li>
+  <li>卡片样式预览：<code>http://&lt;本机局域网IP&gt;:8000/wecom-plan</code></li>
+</ul>
+
+<h2>附：完整卡片文件</h2>
+<ul>
+  <li>默认视图（长图）：<code>docs/assets/plan-card-e3.png</code></li>
+  <li>展开全部细节（长图）：<code>docs/assets/plan-card-e3-expanded.png</code></li>
+</ul>
+
+<div class="foot">本文档由项目仓库 docs/项目概述-汇报版.md 生成；卡片中的机构、医保与费用均为演示数据，实际以当地医院与医保政策为准。</div>
+
+</body>
+</html>

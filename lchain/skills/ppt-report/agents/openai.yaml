@@ -1,0 +1,4 @@
+interface:
+  display_name: "生成 PPT（需求→大纲确认→图文生成→验证）"
+  short_description: "先整理需求、与用户确认大纲（可多轮修改），再生成图文并茂的可编辑 PPTX 并渲染验证"
+  default_prompt: "Use $ppt-report: clarify requirements, propose an outline and wait for the user to confirm or revise it (repeat until confirmed), then build a text-image rich editable PPTX with diagrams, web images, charts and tables, and render-verify every slide before delivering."

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LChain Agent · 提示词调试</title>
+  <link rel="stylesheet" href="/static/style.css?v=2" />
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+  <script src="/static/icons.js?v=2"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <h1><i class="ic" data-icon="sparkles"></i>提示词调试台</h1>
+    <div class="brand-sub">同一输入 · 多套提示词/模型并行对比</div>
+    <div class="nav">
+      <a href="/"><i class="ic" data-icon="chat"></i>对话</a>
+      <a href="/?scenario=consult"><i class="ic" data-icon="stethoscope"></i>问诊</a>
+      <a href="/wecom"><i class="ic" data-icon="users"></i>企微群</a>
+      <a href="/eval"><i class="ic" data-icon="chart"></i>测试</a>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><i class="ic" data-icon="fileText"></i>测试输入</div>
+      <label>用户消息</label>
+      <textarea id="userInput" rows="6" style="font-family:inherit;font-size:14px">用三句话向小学生解释什么是大语言模型。</textarea>
+      <label>模板变量（JSON，覆盖默认值）</label>
+      <textarea id="vars" rows="4">{"language": "中文"}</textarea>
+      <div class="row" style="margin-top:14px">
+        <button id="addVariant"><i class="ic" data-icon="plus"></i>添加变体</button>
+        <button class="primary" id="runAll" style="flex:1"><i class="ic" data-icon="play"></i>全部运行</button>
+      </div>
+    </div>
+
+    <div class="section muted">
+      <div class="section-title"><i class="ic" data-icon="info"></i>使用方式</div>
+      <p>1. 每个变体可以选 Langfuse 中的提示词版本，或者直接编辑提示词文本。</p>
+      <p>2. 点「全部运行」并行执行，对比输出、耗时和 token。</p>
+      <p>3. 每次运行都会在 Langfuse 生成带 <code>playground</code> 标签的 trace，并关联到对应的提示词版本。</p>
+      <p>4. 效果满意后，点「保存为新版本」写回 Langfuse。</p>
+    </div>
+  </aside>
+
+  <main class="pg">
+    <div class="variants" id="variants"></div>
+  </main>
+</div>
+
+<template id="tpl">
+  <div class="card">
+    <h3><span class="vname"><i class="ic" data-icon="sliders"></i></span><button class="remove" title="删除"><i class="ic" data-icon="x"></i></button></h3>
+    <div class="row">
+      <div style="flex:1"><label>提示词</label><select class="pname"></select></div>
+      <div style="flex:1"><label>版本 / Label</label><select class="pver"></select></div>
+    </div>
+    <div class="row">
+      <div style="flex:1"><label>模型</label><select class="model"></select></div>
+      <div style="width:110px"><label>温度</label><input class="temp" type="number" min="0" max="2" step="0.1" /></div>
+    </div>
+    <label class="row"><input class="useOverride" type="checkbox" /> 使用下方编辑后的提示词</label>
+    <textarea class="ptext" rows="10"></textarea>
+    <div class="row" style="margin-top:6px">
+      <button class="run"><i class="ic" data-icon="play"></i>运行</button>
+      <button class="save">保存为新版本</button>
+      <span class="pinfo muted"></span>
+    </div>
+    <div class="result" hidden>
+      <div class="stats"></div>
+      <div class="content"></div>
+      <details style="margin-top:6px"><summary class="muted">最终系统提示词</summary><pre class="sys muted" style="white-space:pre-wrap"></pre></details>
+    </div>
+  </div>
+</template>
+
+<script src="/static/common.js?v=2"></script>
+<script>
+let cfg, promptItems, counter = 0;
+
+async function addVariant(init = {}) {
+  const node = $("#tpl").content.firstElementChild.cloneNode(true);
+  const name = String.fromCharCode(65 + counter++);
+  node.dataset.name = name;
+  $(".vname", node).innerHTML = `${icon("sliders")}变体 ${name}`;
+  $(".model", node).innerHTML = cfg.models.map((m) => `<option>${esc(m)}</option>`).join("");
+  $(".model", node).value = init.model || cfg.default_model;
+  $(".temp", node).value = init.temperature ?? cfg.temperature;
+  $("#variants").appendChild(node);
+  paintIcons(node);   // 模板里的 data-icon 是克隆出来的，要单独画一遍
+
+  const pname = $(".pname", node), pver = $(".pver", node);
+  await loadPromptSelectors(pname, pver);
+  const load = async () => {
+    const q = parseVersionSel(pver.value);
+    const qs = new URLSearchParams(Object.entries({ label: q.prompt_label, version: q.prompt_version }).filter(([, v]) => v != null));
+    try {
+      const p = await api(`/api/prompts/${encodeURIComponent(pname.value)}?${qs}`);
+      $(".ptext", node).value = p.template;
+      $(".pinfo", node).textContent = `${p.source}${p.version ? " v" + p.version : ""}`;
+    } catch (e) { $(".pinfo", node).textContent = "载入失败"; }
+  };
+  pname.addEventListener("prompt-changed", load); pver.onchange = load;
+  $(".ptext", node).addEventListener("input", () => ($(".useOverride", node).checked = true));
+  $(".remove", node).onclick = () => node.remove();
+  $(".run", node).onclick = () => runVariants([node]);
+  $(".save", node).onclick = async () => {
+    const publish = confirm("确定 = 保存并打上 production 标签（线上立即生效）\n取消 = 仅保存为新版本");
+    try {
+      const r = await api(`/api/prompts/${encodeURIComponent(pname.value)}`, { method: "POST",
+        body: JSON.stringify({ prompt: $(".ptext", node).value, labels: publish ? ["production"] : [],
+          config: { temperature: Number($(".temp", node).value), model: $(".model", node).value },
+          commit_message: `playground 变体 ${name}` }) });
+      $(".pinfo", node).textContent = `已保存 v${r.version}`;
+    } catch (e) { alert("保存失败: " + e.message); }
+  };
+  await load();
+  if (init.override) { $(".ptext", node).value = init.override; $(".useOverride", node).checked = true; }
+}
+
+function collect(node) {
+  const v = {
+    variant_name: node.dataset.name, prompt_name: $(".pname", node).value,
+    model: $(".model", node).value, temperature: Number($(".temp", node).value),
+    ...parseVersionSel($(".pver", node).value),
+  };
+  if ($(".useOverride", node).checked) v.prompt_override = $(".ptext", node).value;
+  return v;
+}
+
+async function runVariants(nodes) {
+  let vars = {};
+  try { vars = JSON.parse($("#vars").value || "{}"); } catch { return alert("模板变量不是合法 JSON"); }
+  const input = $("#userInput").value.trim();
+  if (!input) return alert("请输入测试消息");
+  nodes.forEach((n) => { $(".result", n).hidden = false; $(".content", n).innerHTML = '<span class="muted cursor">运行中</span>'; $(".stats", n).innerHTML = ""; });
+  $("#runAll").disabled = true;
+  try {
+    const { results } = await api("/api/playground/compare", { method: "POST",
+      body: JSON.stringify({ input, variants: nodes.map((n) => ({ ...collect(n), variables: vars })) }) });
+    results.forEach((r) => {
+      const n = nodes.find((x) => x.dataset.name === r.variant);
+      const u = r.usage || {};
+      $(".stats", n).innerHTML = `<span>${icon("clock")}${r.latency_s}s</span><span>${icon("activity")}${u.input_tokens ?? "-"} → ${u.output_tokens ?? "-"} tokens</span>`
+        + `<span>${icon("cpu")}${esc(r.model)} · T=${r.temperature}</span><span class="badge">${esc(r.prompt.source)}${r.prompt.version ? " v" + r.prompt.version : ""}</span>`
+        + (r.trace_url ? `<a href="${r.trace_url}" target="_blank">${icon("search")}Trace</a>` : "");
+      $(".content", n).innerHTML = r.error ? `<span class="bad">${icon("xCircle")} ${esc(r.error)}</span>` : md(r.output);
+      $(".sys", n).textContent = r.system_prompt;
+    });
+  } catch (e) {
+    nodes.forEach((n) => ($(".content", n).innerHTML = `<span class="bad">${icon("xCircle")} ${esc(e.message)}</span>`));
+  } finally { $("#runAll").disabled = false; }
+}
+
+(async () => {
+  cfg = await api("/api/config");
+  await addVariant();
+  await addVariant({ override:
+    "你是一位耐心的老师，擅长用生活中的比喻解释复杂概念。\n回答使用 {{language}}，语言简洁、生动，避免专业术语。" });
+  $("#addVariant").onclick = () => addVariant();
+  $("#runAll").onclick = () => runVariants([...document.querySelectorAll("#variants .card")]);
+})();
+</script>
+</body>
+</html>

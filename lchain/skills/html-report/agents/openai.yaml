@@ -1,0 +1,4 @@
+interface:
+  display_name: "生成 HTML 报告"
+  short_description: "生成学术中文 HTML 报告，按需插入患者截图、图表或混排，兼顾手机与打印阅读"
+  default_prompt: "Use $html-report to create an academic HTML report, select text-only or visual layouts as needed, embed relevant patient-submitted screenshots or images with readable sizing and source captions, cite verified scientific sources, and check mobile and print formatting."

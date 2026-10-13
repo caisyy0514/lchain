@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>就医规划卡 · 样式预览</title>
+  <link rel="stylesheet" href="/static/style.css?v=2" />
+  <link rel="stylesheet" href="/static/plan-card.css?v=2" />
+  <script src="/static/icons.js?v=2"></script>
+  <script src="/static/common.js?v=2"></script>
+  <script src="/static/plan-card.js?v=2"></script>
+  <style>
+    .pv-head { max-width: 1100px; margin: 0 auto 18px; }
+    .pv-head h1 { margin: 0 0 4px; font-size: 20px; }
+    .pv-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
+    .pv-tabs button.on { border-color: var(--primary); color: #fff; background: linear-gradient(180deg, var(--primary) 0%, var(--primary2) 100%); }
+    .pv-views { display: inline-flex; gap: 6px; margin-left: auto; padding: 3px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel2); }
+    .pv-views button { border: none; background: transparent; padding: 5px 11px; font-size: 12.5px; color: var(--muted); }
+    .pv-views button.on { background: var(--panel-hi); color: var(--text); border-radius: 7px; box-shadow: var(--sh-1); }
+    .pv-toggle { display: inline-flex; align-items: center; gap: 7px; color: var(--text2); font-size: 12.5px; cursor: pointer; user-select: none; }
+    .pv-toggle input { width: 15px; height: 15px; }
+
+    /* 手机预览：贴近微信内置浏览器的真实宽度（390 / 360） */
+    .pc-preview-stage[data-view="phone"] .pc-preview-chat,
+    .pc-preview-stage[data-view="phone-sm"] .pc-preview-chat {
+      flex: 0 0 390px; min-width: 0; max-width: 390px;
+      padding: 12px 10px 18px; border-radius: 30px;
+      border: 1px solid var(--border-strong);
+      background: linear-gradient(180deg, #161a24 0%, #0f1219 100%);
+      box-shadow: var(--sh-3), 0 0 0 7px #05070c;
+    }
+    .pc-preview-stage[data-view="phone-sm"] .pc-preview-chat { flex-basis: 360px; max-width: 360px; }
+    .pc-preview-stage[data-view^="phone"] { justify-content: flex-start; }
+    .pc-preview-device { font-size: 12px; color: var(--muted); margin-bottom: 10px; text-align: center; }
+    @media (max-width: 480px) {
+      .pc-preview-page { padding: 16px 10px 40px; }
+      .pc-preview-stage[data-view^="phone"] .pc-preview-chat { flex-basis: 100%; max-width: 100%; box-shadow: var(--sh-2); }
+      .pv-views { margin-left: 0; width: 100%; justify-content: space-between; }
+    }
+
+    /* 聊天预览（模拟企微群消息） */
+    .pv-chat { display: flex; gap: 10px; margin-bottom: 18px; }
+    .pv-chat .pv-av { width: 30px; height: 30px; flex: none; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      background: var(--panel3); color: var(--text2); }
+    .pv-chat .pv-col { min-width: 0; }
+    .pv-chat .pv-who { font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+    .pv-bubble { display: inline-block; max-width: 560px; padding: 9px 13px; border-radius: 10px; font-size: 13.5px; line-height: 1.7;
+      background: var(--panel2); border: 1px solid var(--border); color: var(--text); }
+    .pv-bubble.me { background: #1f2640; }
+    .pv-chat.me { flex-direction: row-reverse; }
+    .pv-chat.me .pv-col { text-align: right; }
+
+    .pv-side { display: grid; gap: 12px; }
+    .pv-side .panel { padding: 14px 15px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
+    .pv-side h3 { margin: 0 0 8px; font-size: 13.5px; color: var(--text); }
+    .pv-side p, .pv-side li { margin: 0; font-size: 12.5px; line-height: 1.75; color: var(--text2); }
+    .pv-side ul { margin: 6px 0 0; padding-left: 18px; }
+    .pv-side li + li { margin-top: 4px; }
+    .pv-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .pv-legend span { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); }
+    .pv-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    .pv-note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+  </style>
+</head>
+<body>
+<div class="pc-preview-page">
+  <header class="pv-head">
+    <h1><i class="ic" data-icon="stethoscope"></i> 就医规划卡 · 样式预览</h1>
+    <div class="muted">下方为示例数据，用于确认卡片设计；真实内容由服务端确定性渲染，模型不重新生成临床方案。</div>
+    <div class="pv-tabs" id="tabs"></div>
+    <div class="pv-tabs">
+      <span class="muted">预览宽度：</span>
+      <div class="pv-views" id="views">
+        <button data-view="phone" class="on">手机 390px</button>
+        <button data-view="phone-sm">小屏 360px</button>
+        <button data-view="desktop">桌面</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="pc-preview-stage" id="stage" data-view="phone">
+    <div class="pc-preview-chat">
+      <div class="pc-preview-device">微信内置浏览器 · 390 × 844</div>
+      <div class="pv-chat me">
+        <div class="pv-av"><i class="ic" data-icon="user"></i></div>
+        <div class="pv-col">
+          <div class="pv-who">王叔叔 · 患者</div>
+          <div class="pv-bubble me" id="patientMsg"></div>
+        </div>
+      </div>
+      <div class="pv-chat">
+        <div class="pv-av"><i class="ic" data-icon="bot"></i></div>
+        <div class="pv-col">
+          <div class="pv-who">家庭医生 · 助手</div>
+          <div id="cardSlot"></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="pc-preview-side pv-side">
+      <div class="panel">
+        <h3 id="scName"></h3>
+        <p id="scDesc"></p>
+      </div>
+      <div class="panel">
+        <h3>设计要点</h3>
+        <ul>
+          <li>行动优先：首屏是分级徽标 + 一句建议 + 现在要做；</li>
+          <li>安全不折叠：重要安全提醒始终可见、高对比；</li>
+          <li>渐进披露：可能方向 / 需排除 / 为什么收进「判断依据」；</li>
+          <li>颜色分级：顶部色条与徽标随紧急程度换色。</li>
+        </ul>
+        <div class="pv-legend">
+          <span><i style="background:#d92d20"></i>立即急救</span>
+          <span><i style="background:#dc6803"></i>当日就医</span>
+          <span><i style="background:#1570cd"></i>计划门诊</span>
+          <span><i style="background:#039855"></i>居家观察</span>
+          <span><i style="background:#6938ef"></i>暂不能分级</span>
+        </div>
+        <label class="pv-toggle" style="margin:12px 0 0"><input type="checkbox" id="expandAll" /> 展开「判断依据」</label>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = [
+  {
+    key: "e0", tab: "E0 立即急救", name: "E0 · 立即急救（胸痛伴大汗）",
+    desc: "危险信号命中后直接给行动计划，不再追问。安全提醒紧跟在建议之后，确保患者第一眼能看到「不要等」。",
+    patientMsg: "我爸突然胸痛，出了很多汗，说喘不上气",
+    extra: {
+      kind: "plan_card", urgency: "E0", care_mode: "emergency", release_stage: "DEMO",
+      view: {
+        plan_version: 1, urgency_word: "现在立即",
+        headline: "现在请拨打120，不要等到明天。",
+        condition_summary: "68岁男性，胸骨后压榨样疼痛伴大汗约40分钟，有高血压、糖尿病史；这种情况要按急性冠脉综合征第一时间处理。",
+        steps: [
+          "身边有人时请他协助拨打120，并告诉急救人员具体位置和症状；疑似心梗不要自行驾车",
+          "保持安静、半坐位，解开领口；不要自行服用硝酸甘油或其他药物",
+          "带上正在服用的药物清单、既往病历和医保卡"
+        ],
+        tasks: [
+          { kind: "go", title: "身边有人时请他协助拨打，说清位置和症状", detail: "疑似卒中/心梗不要自行驾车", when: "立即", where: "原地（保持安静、等待急救）", cost: "救治优先，费用按医保政策结算" },
+          { kind: "prepare", title: "保持安静、半坐位，解开领口；不要自行服药", when: "等待急救时", where: "原地", cost: "无" },
+          { kind: "prepare", title: "带上药物清单、既往病历和医保卡", when: "出发前", where: "随身携带", cost: "无" },
+          { kind: "check", title: "到院后按医生安排检查", detail: "心电图、心肌酶、胸部影像", when: "到院后", where: "急诊", cost: "按急诊医保政策结算" }
+        ],
+        alerts: [
+          "不要为了继续聊天耽误求助，也不要等家属回复后再打",
+          "如果出现意识不清或呼吸停止，请立即开始心肺复苏，直到急救人员接手"
+        ],
+        conditions: [
+          { name: "急性冠脉综合征", likelihood: "需优先排除", evidence: "胸骨后压榨样疼痛伴大汗 40 分钟，有高血压、糖尿病史" },
+          { name: "主动脉夹层", likelihood: "需优先排除", evidence: "突发剧烈胸痛，需急诊影像学排除" },
+          { name: "肺栓塞", likelihood: "需优先排除" }
+        ],
+        possible_conditions: ["急性冠脉综合征（需要优先排除）", "主动脉夹层（需要优先排除）", "肺栓塞（需要优先排除）"],
+        confirm_method: "急诊医生结合心电图、心肌酶和影像学检查综合判断",
+        risks_to_exclude: ["急性心肌梗死", "主动脉夹层", "恶性心律失常"],
+        safety_groups: [
+          { level: "emergency", action: "出现以下任一情况，立即拨打120或去最近急诊", signals: ["意识不清或呼吸停止", "胸痛持续不缓解、大汗淋漓"] }
+        ],
+        time_window: "立即",
+        risk_signals: [
+          { name: "急性心肌梗死", signals: ["持续胸痛/胸闷超过 15 分钟不缓解", "大汗、恶心、濒死感", "含服医生开过的硝酸甘油仍不缓解"], action: "出现以上任一信号，请立即拨打急救电话或前往最近医院急诊，不要在家等待。" },
+          { name: "主动脉夹层", signals: ["突发撕裂样胸背痛", "双侧血压明显不等", "晕厥或一侧肢体无力"], action: "出现以上任一信号，请立即拨打急救电话或前往最近医院急诊，不要在家等待。" },
+          { name: "恶性心律失常", signals: ["心跳忽快忽慢或明显漏跳，伴头晕", "胸痛、气短、出冷汗", "晕厥或眼前发黑"], action: "出现以上任一信号，请立即拨打急救电话或前往最近医院急诊，不要在家等待。" }
+        ],
+        rationale: "胸痛伴大汗属于高危表现，越早到急诊开通血管，心肌损伤越小；救护车途中也能开始监护和处理。",
+        doctor_review_note: "已同步平台值班医生，医生会持续跟进本次急救安排。"
+      }
+    }
+  },
+  {
+    key: "e2", tab: "E2 当日就医", name: "E2 · 当日就医（发热咳嗽）",
+    desc: "当日必须面诊的场景：建议里带时间窗，步骤明确去哪里、可能查什么，预约尚未落实时用琥珀色提示。",
+    patientMsg: "发烧第三天了，38度多，咳嗽有黄痰",
+    extra: {
+      kind: "plan_card", urgency: "E2", care_mode: "in_person", release_stage: "DEMO",
+      view: {
+        plan_version: 1, urgency_word: "今天内",
+        headline: "今天内到示例市第三医院·呼吸内科就诊。",
+        condition_summary: "发热38.6℃、咳嗽黄痰3天，没有呼吸困难；需要今天面诊，判断是否发展为细菌性肺炎。",
+        steps: [
+          "二级医院 · 发热门诊或呼吸内科（按医院官方入口挂号/取号）",
+          "医生可能会安排检查：血常规、C反应蛋白、胸部X线或CT",
+          "就诊全程戴好口罩，尽量不乘坐公共交通工具"
+        ],
+        tasks: [
+          { kind: "book", status: "todo", title: "先完成预约挂号", detail: "通过「示例市第三医院」公众号预约或院内自助机取号；不方便时联系病历经理协助", when: "今天内前", where: "示例市第三医院·呼吸内科", cost: "挂号费约 ¥30" },
+          { kind: "prepare", title: "戴好口罩，尽量不乘坐公共交通工具", when: "出发前", where: "在家准备、随身携带", cost: "无" },
+          { kind: "check", title: "到院后按医生安排检查", detail: "血常规、C反应蛋白、胸部X线或CT", when: "就诊当天", where: "示例市第三医院·呼吸内科", cost: "检查费约 ¥185（按总费用一次结算）" }
+        ],
+        alerts: [
+          "如果出现呼吸困难、胸痛或意识模糊，请立即拨打120或前往急诊",
+          "如果体温超过39℃且退热药无效，请提前就诊"
+        ],
+        arrangement_note: "当前尚未预约（仍需你或病历经理按上面的方式落实）",
+        conditions: [
+          { name: "细菌性肺炎", likelihood: "需优先排除", evidence: "发热 38.9℃ 三天不退、咳嗽加重伴黄痰" },
+          { name: "急性支气管炎", likelihood: "较可能", evidence: "咳嗽咳痰、当前没有呼吸困难" },
+          { name: "流感/其他病毒感染", likelihood: "待明确" }
+        ],
+        possible_conditions: ["细菌性肺炎（需要优先排除）", "急性支气管炎（较可能）", "流感病毒感染（待明确）"],
+        confirm_method: "接诊医生结合听诊、血常规、炎症指标和胸部影像判断",
+        risks_to_exclude: ["细菌性肺炎", "低氧血症"],
+        safety_groups: [
+          { level: "emergency", action: "出现以下任一情况，立即拨打120或去最近急诊", signals: ["呼吸困难、口唇发紫", "意识模糊或叫不醒"] },
+          { level: "today", action: "出现以下任一情况，今天内就医", signals: ["发热持续不退、精神变差", "无法进食进水"] }
+        ],
+        time_window: "今天内",
+        risk_signals: [
+          { name: "细菌性肺炎", signals: ["持续高热不退（≥39℃）或呼吸急促", "咳血或痰中带血、口唇发紫", "精神变差、嗜睡、叫不醒"], action: "出现以上任一信号，请立即拨打急救电话或前往最近医院急诊，不要在家等待。" },
+          { name: "低氧血症", signals: ["口唇或指甲发紫", "静息时也气短、说不出整句话", "意识模糊"], action: "出现以上任一信号，请立即拨打急救电话或前往最近医院急诊，不要在家等待。" }
+        ],
+        care_options: {
+          region: "示例市朝阳区", insurance: "示例市职工医保（演示参数）",
+          saving: 129,
+          disclaimer: "费用为按示例医保政策的估算（起付线、报销比例、检查价格为演示参数），实际以医院结算和当地医保政策为准；机构为演示参考，挂号请以官方渠道为准。",
+          needs: ["呼吸内科", "血常规", "C反应蛋白", "胸部X线", "病原检测"],
+          plan_note: "升级到更高级别医院不会改变本次检查与处理方案，但按示例医保政策个人自付更高。",
+          options: [
+            { facility_id: "DEMO-CHY-002", name: "示例市第三医院", level: "二级", level_rank: 2, district: "朝阳区", department: "呼吸内科", covers_needs: true,
+              address: "示例市朝阳区健康路 22 号", entry_method: "「示例市第三医院」公众号预约或院内自助机取号",
+              insurance: "医保定点", travel_minutes: 15, reason: "与您同区；二级即可完成本次检查与处理；医保定点",
+              recommended: true, total: 215, reimbursed: 69, out_of_pocket: 146 },
+            { facility_id: "DEMO-CHY-003", name: "示例市朝阳医院", level: "三级", level_rank: 3, district: "朝阳区", department: "呼吸内科", covers_needs: true,
+              address: "示例市朝阳区建国路 100 号", entry_method: "「示例市朝阳医院」公众号预约或 114 挂号平台",
+              insurance: "医保定点", travel_minutes: 25, reason: "与您同区；三级具备所需能力；医保定点",
+              recommended: false, total: 275, reimbursed: 0, out_of_pocket: 275 }
+          ]
+        },
+        rationale: "持续3天发热伴黄痰，需要听诊和影像学检查排除肺炎，再决定是口服药还是需要进一步处理。",
+        doctor_review_note: "本结论已由平台医生审核；如有调整会在本群同步。"
+      }
+    }
+  },
+  {
+    key: "e4", tab: "E4 计划门诊", name: "E4 · 计划门诊（预约已确认 + 计划更新）",
+    desc: "非急症计划门诊：预约已确认用绿色状态条展示；计划有修订时置顶提示，避免患者用旧版本。",
+    patientMsg: "右上腹隐痛两周了，吃完饭更明显",
+    extra: {
+      kind: "plan_card", urgency: "E4", care_mode: "stable_followup", release_stage: "DEMO",
+      view: {
+        plan_version: 2, urgency_word: "按计划",
+        revision_notice: "计划已更新：预约时间调整为 10月14日（周二）09:30",
+        headline: "10月14日（周二）上午到示例市第三医院·消化内科就诊。",
+        condition_summary: "右上腹隐痛两周、饭后明显，无发热、呕吐、黄疸；需要面诊排查胆囊和胆管问题。",
+        steps: [
+          "二级医院 · 消化内科（官方公众号或院内自助机取号）",
+          "医生可能会安排检查：腹部超声、肝功能、血常规",
+          "带上既往体检报告；就诊当天早晨空腹"
+        ],
+        tasks: [
+          { kind: "book", status: "confirmed", title: "预约已确认", detail: "示例市第三医院 · 10月14日（周二）09:30 · 消化内科", when: "10月14日（周二）09:30", where: "示例市第三医院·消化内科", cost: "挂号费约 ¥30（已含在总费用）" },
+          { kind: "prepare", title: "带上既往体检报告；就诊当天早晨空腹", when: "出发前", where: "在家准备、随身携带", cost: "无" },
+          { kind: "check", title: "到院后按医生安排检查", detail: "腹部超声、肝功能、血常规", when: "就诊当天", where: "示例市第三医院·消化内科", cost: "检查费约 ¥205（按总费用一次结算）" }
+        ],
+        alerts: ["如果出现持续右上腹剧痛、发热寒战或皮肤发黄，请立即前往急诊"],
+        arrangement_note: "预约已确认：10月14日（周二）09:30 · 消化内科",
+        conditions: [
+          { name: "胆囊结石/慢性胆囊炎", likelihood: "较可能", evidence: "右上腹隐痛两周、饭后明显，无发热呕吐黄疸" },
+          { name: "胆管炎", likelihood: "需优先排除", evidence: "如出现发热寒战或皮肤发黄需急诊处理" },
+          { name: "胃十二指肠溃疡", likelihood: "待明确" }
+        ],
+        possible_conditions: ["胆囊结石/慢性胆囊炎（较可能）", "胆管炎（需要优先排除）", "胃十二指肠溃疡（待明确）"],
+        confirm_method: "医生结合腹部超声、肝功能与化验结果判断",
+        risks_to_exclude: ["胆管炎", "胰腺炎", "溃疡并发症"],
+        safety_groups: [
+          { level: "emergency", action: "出现以下任一情况，立即拨打120或去最近急诊", signals: ["持续右上腹剧痛、发热寒战", "皮肤或眼睛发黄"] ["持续右上腹剧痛、发热寒战", "皮肤或眼睛发黄"]},
+          { level: "soon", action: "出现以下任一情况，尽快就医", signals: ["腹痛加重影响进食"] }
+        ],
+        time_window: "10月14日（周二）上午",
+        risk_signals: [
+          { name: "胆管炎", signals: ["发热寒战伴右上腹剧痛", "皮肤或眼睛发黄、尿色明显加深", "意识模糊、血压偏低"], action: "出现以上任一信号，请立即拨打急救电话或前往最近医院急诊，不要在家等待。" },
+          { name: "胰腺炎", signals: ["上腹持续剧痛并向腰背放射", "反复呕吐、无法进食进水", "发热、心跳明显加快"], action: "出现以上任一信号，请立即拨打急救电话或前往最近医院急诊，不要在家等待。" },
+          { name: "溃疡并发症", signals: ["突发刀割样腹痛、腹部僵硬拒按", "呕血或黑便", "冒冷汗、不敢动"], action: "出现以上任一信号，请立即拨打急救电话或前往最近医院急诊，不要在家等待。" }
+        ],
+        care_options: {
+          region: "示例市朝阳区", insurance: "示例市职工医保（演示参数）",
+          saving: 148.5,
+          disclaimer: "费用为按示例医保政策的估算（起付线、报销比例、检查价格为演示参数），实际以医院结算和当地医保政策为准；机构为演示参考，挂号请以官方渠道为准。",
+          needs: ["消化内科", "腹部超声", "肝功能", "血常规"],
+          plan_note: "升级到更高级别医院不会改变本次检查与处理方案，但按示例医保政策个人自付更高。",
+          options: [
+            { facility_id: "DEMO-CHY-002", name: "示例市第三医院", level: "二级", level_rank: 2, district: "朝阳区", department: "消化内科", covers_needs: true,
+              address: "示例市朝阳区健康路 22 号", entry_method: "「示例市第三医院」公众号预约或院内自助机取号",
+              insurance: "医保定点", travel_minutes: 15, reason: "与您同区；二级即可完成本次检查与处理；医保定点",
+              recommended: true, total: 235, reimbursed: 81, out_of_pocket: 154 },
+            { facility_id: "DEMO-CHY-003", name: "示例市朝阳医院", level: "三级", level_rank: 3, district: "朝阳区", department: "消化内科", covers_needs: true,
+              address: "示例市朝阳区建国路 100 号", entry_method: "「示例市朝阳医院」公众号预约或 114 挂号平台",
+              insurance: "医保定点", travel_minutes: 25, reason: "与您同区；三级具备所需能力；医保定点",
+              recommended: false, total: 305, reimbursed: 2.5, out_of_pocket: 302.5 }
+          ]
+        },
+        rationale: "先做腹部超声和肝功能，判断是否存在结石或胆管梗阻，再决定是否需要专科处理。",
+        doctor_review_note: "本结论已由平台医生审核；如有调整会在本群同步。"
+      }
+    }
+  },
+  {
+    key: "self", tab: "居家观察", name: "居家观察（低风险轻症）",
+    desc: "绿色主题表示低风险；主动回访与最长观察截止用状态条说明「不是放养」，升级指征仍然直接可见。",
+    patientMsg: "嗓子疼、流鼻涕、有点低烧，37度8",
+    extra: {
+      kind: "plan_card", urgency: "E4", care_mode: "self_care", release_stage: "DEMO",
+      view: {
+        plan_version: 1, urgency_word: "居家观察",
+        headline: "可以先居家观察，按下面的清单执行。",
+        condition_summary: "低热37.8℃、咽痛、流涕1天，没有呼吸困难或明显乏力；符合普通上呼吸道感染的居家观察条件。",
+        steps: [
+          "多饮温水、清淡饮食、保证休息；体温≥38.5℃可按说明书服用退热药",
+          "不要自行服用抗生素；如症状加重请按下方提醒处理"
+        ],
+        tasks: [
+          { kind: "observe", status: "active", title: "多饮温水、清淡饮食、保证休息；体温≥38.5℃可按说明书服用退热药", when: "观察期内", where: "在家", cost: "居家观察不产生检查费用" },
+          { kind: "observe", status: "active", title: "等我们的主动回访", detail: "10月12日（周日）09:00 通过本群问你情况；最长观察到 10月13日（周一）20:00；出现上面的变化请立即升级，不用等回访。", when: "10月12日（周日）09:00", where: "本群（不用跑医院）", cost: "免费" }
+        ],
+        alerts: [
+          "如果出现呼吸困难、持续高热不退或意识改变，请立即拨打120或前往急诊"
+        ],
+        observation_review_note: "目前可在家观察到 10月13日（周一）20:00；我们会在 10月12日（周日）09:00 通过本群再问你情况，出现上面任一变化请立即升级，不用等回访。",
+        conditions: [
+          { name: "普通上呼吸道感染", likelihood: "较可能", evidence: "低热 37.8℃、咽痛、流涕 1 天，无呼吸困难" },
+          { name: "流感病毒感染", likelihood: "待明确", evidence: "如高热不退或全身酸痛明显需复评" }
+        ],
+        possible_conditions: ["普通上呼吸道感染（较可能）", "流感病毒感染（待明确）"],
+        confirm_method: "如超过观察期未改善，线下就诊明确病因",
+        risks_to_exclude: ["呼吸困难/低氧", "持续高热不退"],
+        safety_groups: [
+          { level: "emergency", action: "出现以下任一情况，立即拨打120或去最近急诊", signals: ["呼吸困难、口唇发紫", "持续高热不退或意识改变"] }
+        ],
+        time_window: "居家观察",
+        risk_signals: [
+          { name: "呼吸困难/低氧", signals: ["口唇或指甲发紫", "静息时也气短、说不出整句话", "意识模糊"], action: "出现以上任一信号，请立即拨打急救电话或前往最近医院急诊，不要在家等待。" },
+          { name: "持续高热不退", signals: ["体温超过 39℃ 且退热药无效", "精神明显变差、嗜睡", "喝水少、尿量明显减少"], action: "出现以上任一信号，请立即拨打急救电话或前往最近医院急诊，不要在家等待。" }
+        ],
+        rationale: "目前没有危险信号，属于可居家观察的轻症；按已批准的观察路径随访，避免来回跑医院。",
+        doctor_review_note: "本结论已由平台医生审核；回访时如有异常会及时升级处理。"
+      }
+    }
+  },
+  {
+    key: "eu", tab: "EU 暂不能分级", name: "EU · 暂不能安全分级",
+    desc: "信息不足时不做侥幸判断：紫色主题提示需要人工/线下评估，同时给出当下可执行的保守步骤。",
+    patientMsg: "最近老是头晕，血压有点高",
+    extra: {
+      kind: "plan_card", urgency: "EU", care_mode: "initial_navigation", release_stage: "DEMO",
+      view: {
+        plan_version: 1, urgency_word: "尽快（需要人工/线下确认）",
+        headline: "还不能安全判断，需要尽快线下或人工评估。",
+        condition_summary: "目前只了解到头晕持续两周、血压偏高，缺少起病方式、伴随症状和用药情况，暂时无法确定安全等级。",
+        steps: [
+          "尽快到神经内科或全科门诊评估；评估前避免独自驾车、登高",
+          "医生可能会安排检查：血压监测、血常规、头颅影像（按医生判断）"
+        ],
+        tasks: [
+          { kind: "go", title: "去神经内科或全科门诊评估", detail: "评估前避免独自驾车、登高", when: "尽快", where: "示例市海淀医院·神经内科", cost: "挂号费约 ¥30" },
+          { kind: "check", title: "到院后按医生安排检查", detail: "血压监测、血常规、头颅影像（按医生判断）", when: "就诊当天", where: "示例市海淀医院·神经内科", cost: "检查费约 ¥135（按总费用一次结算）" }
+        ],
+        alerts: ["如果出现说话不清、肢体无力、视物成双或剧烈头痛，请立即拨打120"],
+        conditions: [
+          { name: "高血压相关性头晕", likelihood: "待明确", evidence: "头晕持续两周、血压偏高，缺少发作方式与伴随症状" },
+          { name: "脑血管问题", likelihood: "需优先排除", evidence: "如出现说话不清、肢体无力需立即急诊" },
+          { name: "耳源性眩晕", likelihood: "待明确" }
+        ],
+        possible_conditions: ["高血压相关性头晕（待明确）", "脑血管问题（需要优先排除）", "耳源性眩晕（待明确）"],
+        confirm_method: "由医生结合查体、血压监测与影像学结果判断",
+        risks_to_exclude: ["脑血管事件", "高血压急症"],
+        safety_groups: [
+          { level: "emergency", action: "出现以下任一情况，立即拨打120或去最近急诊", signals: ["说话不清、肢体无力", "视物成双或剧烈头痛"] },
+          { level: "today", action: "出现以下任一情况，今天内就医", signals: ["头晕明显加重、站不稳"] }
+        ],
+        time_window: "尽快",
+        risk_signals: [
+          { name: "脑血管事件", signals: ["口角歪斜、单侧肢体无力", "说话不清或听不懂话", "突发视力丧失、走路不稳"], action: "出现以上任一信号，请立即拨打急救电话或前往最近医院急诊，不要在家等待。" },
+          { name: "高血压急症", signals: ["血压显著升高伴剧烈头痛", "视物模糊、胸痛、气短", "意识模糊或抽搐"], action: "出现以上任一信号，请立即拨打急救电话或前往最近医院急诊，不要在家等待。" }
+        ],
+        care_options: {
+          region: "示例市海淀区", insurance: "示例市职工医保（演示参数）",
+          saving: 76,
+          disclaimer: "费用为按示例医保政策的估算（起付线、报销比例、检查价格为演示参数），实际以医院结算和当地医保政策为准；机构为演示参考，挂号请以官方渠道为准。",
+          needs: ["神经内科", "血压监测", "血常规", "头颅CT"],
+          plan_note: "升级到更高级别医院不会改变本次检查与处理方案，但按示例医保政策个人自付更高。",
+          options: [
+            { facility_id: "DEMO-HD-002", name: "示例市海淀医院", level: "二级", level_rank: 2, district: "海淀区", department: "神经内科", covers_needs: true,
+              address: "示例市海淀区学院路 66 号", entry_method: "「示例市海淀医院」公众号预约或院内自助机取号",
+              insurance: "医保定点", travel_minutes: 15, reason: "与您同区；二级即可完成本次检查与处理；医保定点",
+              recommended: true, total: 135, reimbursed: 21, out_of_pocket: 114 },
+            { facility_id: "DEMO-CHY-003", name: "示例市朝阳医院", level: "三级", level_rank: 3, district: "朝阳区", department: "神经内科", covers_needs: true,
+              address: "示例市朝阳区建国路 100 号", entry_method: "「示例市朝阳医院」公众号预约或 114 挂号平台",
+              insurance: "医保定点", travel_minutes: 55, reason: "跨区约 55 分钟；三级具备所需能力；医保定点",
+              recommended: false, total: 190, reimbursed: 0, out_of_pocket: 190 }
+          ]
+        },
+        rationale: "头晕的原因跨度很大，缺少关键信息时先做线下评估，比在群里猜一个结论更安全。",
+        doctor_review_note: "已安排人工评估；病历经理会跟进补充信息。"
+      }
+    }
+  }
+];
+
+const params = new URLSearchParams(location.search);
+const st = { key: SCENARIOS[0].key, open: params.get("open") === "1", view: params.get("view") || "phone" };
+if (params.get("s") && SCENARIOS.some((x) => x.key === params.get("s"))) st.key = params.get("s");
+
+function renderView() {
+  $("#stage").dataset.view = st.view;
+  const chatW = Math.round($(".pc-preview-chat").getBoundingClientRect().width);
+  const dev = $(".pc-preview-device");
+  if (dev) dev.textContent = st.view === "desktop" ? "桌面 / 平板" : `微信内置浏览器 · 可视宽 ${chatW}px`;
+  $("#views").querySelectorAll("button").forEach((b) => {
+    b.classList.toggle("on", b.dataset.view === st.view);
+    b.onclick = () => { st.view = b.dataset.view; renderView(); };
+  });
+}
+window.addEventListener("resize", renderView);
+
+function renderTabs() {
+  $("#tabs").innerHTML = SCENARIOS.map((s) =>
+    `<button class="${s.key === st.key ? "on" : ""}" data-key="${s.key}">${esc(s.tab)}</button>`).join("");
+  $("#tabs").querySelectorAll("button").forEach((b) => b.onclick = () => { st.key = b.dataset.key; render(); });
+}
+
+function render() {
+  const sc = SCENARIOS.find((s) => s.key === st.key);
+  $("#patientMsg").textContent = sc.patientMsg;
+  $("#scName").textContent = sc.name;
+  $("#scDesc").textContent = sc.desc;
+  $("#cardSlot").innerHTML = planCardHTML(sc.extra, sc.extra.view.headline);
+  $("#cardSlot").querySelectorAll("details").forEach((d) => { d.open = st.open; });
+  $("#expandAll").checked = st.open;
+  $("#expandAll").onchange = (e) => { st.open = e.target.checked; render(); };
+  renderTabs();
+}
+
+render();
+renderView();
+</script>
+</body>
+</html>

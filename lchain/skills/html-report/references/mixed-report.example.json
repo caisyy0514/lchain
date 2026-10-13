@@ -1,0 +1,27 @@
+{
+  "title": "医学报告的图文与证据表达",
+  "subtitle": "从原始事实到解释边界：用图、表与可追溯来源帮助阅读。本例仅用于版式演示，数值和材料不构成医学证据。",
+  "author": "Medex",
+  "meta": {"材料性质": "合成数据与教学示意"},
+  "references": [
+    {"id": "demo-data", "title": "本例合成数据与教学结构说明（非临床证据）", "source": "随本例提供的教学材料"}
+  ],
+  "blocks": [
+    {"type": "heading", "text": "01 事实、解释与证据"},
+    {"type": "columns", "ratio": [1, 1.45], "left": [
+      {"type": "paragraph", "text": "将原始资料、解释、证据与行动建议连在一起。每个外部医学结论应紧邻已经核实的来源。", "citations": ["demo-data"]},
+      {"type": "bullets", "items": ["先核对观测日期、单位和数据口径。", "说明哪些结果已知，哪些点缺测或不确定。", "明确证据适用人群与需要进一步沟通的问题。"]}
+    ], "right": [
+      {"type": "image", "path": "../assets/teaching-flow.svg", "alt": "由原始资料、结果解释、科学证据到行动建议的四步结构", "caption": "图 1 教学结构示意", "source": "自绘教学结构图，非临床影像"}
+    ]},
+    {"type": "heading", "text": "02 图表与原始数值核对"},
+    {"type": "columns", "left": [
+      {"type": "chart", "chart_type": "bar", "categories": ["基线", "随访"], "series": [{"name": "演示指标", "values": [8.2, 6.5]}], "unit": "mmol/L", "caption": "图 2 指标比较", "source": "合成演示数据", "citations": ["demo-data"]}
+    ], "right": [
+      {"type": "table", "headers": ["项目", "数值", "说明"], "rows": [["基线", "8.20 mmol/L", "合成值"], ["随访", "6.50 mmol/L", "合成值"]], "caption": "表 1 供核对的原始数值", "source": "合成演示数据", "citations": ["demo-data"]}
+    ]},
+    {"type": "heading", "text": "03 缺测与解释边界"},
+    {"type": "chart", "chart_type": "line", "categories": ["第1周", "第2周", "第3周", "第4周"], "series": [{"name": "演示系列 A", "values": [8.2, 7.6, null, 6.5]}, {"name": "演示系列 B", "values": [8.1, 7.9, 7.2, 6.8]}], "unit": "mmol/L", "caption": "图 3 缺测处断开，保留实际观测", "alt": "系列 A 第3周未测量，折线不跨过该点连接；两系列用不同线型呈现", "source": "合成演示数据", "citations": ["demo-data"]},
+    {"type": "quote", "text": "该示例只能用于验证格式；替换为真实材料后，重新核对引用、数值和适用范围。"}
+  ]
+}

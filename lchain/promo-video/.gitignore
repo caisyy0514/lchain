@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+output/frames/
+output/preview/
+output/voice/

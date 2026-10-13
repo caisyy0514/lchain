@@ -1,0 +1,8 @@
+{
+    "pendant.autoGenerateSessionNames": true,
+    "pendant.sessionNameGeneration": {
+        "model": "routerhub/anthropic/claude-opus-5-5",
+        "thinking": "medium"
+    },
+    "pendant.sessionRailPosition": "left"
+}

@@ -1,0 +1,28 @@
+langchain==1.4.2
+langchain-core==1.6.5
+langchain-openai==1.6.6
+langgraph==1.2.12
+langfuse==4.15.6
+fastapi==0.141.1
+uvicorn[standard]==0.54.0
+sse-starlette==3.4.11
+pydantic-settings==2.15.0
+python-dotenv==1.2.3
+# 联网搜索 / 网页正文提取 / Skills
+ddgs==9.16.0
+trafilatura==2.2.0
+pyyaml>=6.0
+# 企微群回复：MySQL / 文件解析 / 上传
+sqlalchemy[asyncio]>=2.0
+aiomysql>=0.2
+# aiomysql 0.3.x 依赖 pymysql.converters.escape_bytes_prefixed，pymysql 1.2 已移除（写入 bytes 会报错）
+pymysql>=1.1,<1.2
+cryptography>=42
+pymupdf>=1.24
+python-docx>=1.1
+python-multipart>=0.0.9
+# LangGraph checkpoint（MySQL 持久化，断点续跑）
+langgraph-checkpoint-mysql[aiomysql]>=3.0
+# 测试（报告类 Skill 单测）
+pytest>=8
+pillow>=10

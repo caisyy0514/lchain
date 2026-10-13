@@ -1,0 +1,28 @@
+# 企业微信群回复 Agent 的业务存储（消息 / 摘要 / 待回复记录 / 文档 / 运行日志）
+# 启动：make mysql-up    连接：make mysql-cli
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: lchain-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-lchain_root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-lchain}
+      MYSQL_USER: ${MYSQL_USER:-lchain}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-lchain}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - 127.0.0.1:13306:3306
+    volumes:
+      - lchain_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-lchain_root}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  lchain_mysql_data:

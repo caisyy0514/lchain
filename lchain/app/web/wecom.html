@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>企微群回复 Agent · 测试</title>
+  <link rel="stylesheet" href="/static/style.css?v=2" />
+  <link rel="stylesheet" href="/static/plan-card.css?v=2" />
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+  <script src="/static/icons.js?v=2"></script>
+  <script src="/static/plan-card.js?v=2"></script>
+  <style>
+    .wx { display: grid; grid-template-columns: 300px 1fr 400px; height: 100vh; }
+    .trace { background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 14px; }
+    .gmsg { max-width: 820px; margin: 0 auto 14px; display: flex; gap: 10px; }
+    .gmsg .avatar { font-size: 13px; }
+    .gmsg .who { font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+    .gmsg .body { background: var(--panel); border: 1px solid var(--border); padding: 8px 12px; border-radius: 10px;
+      white-space: pre-wrap; word-break: break-word; display: inline-block; max-width: 640px; }
+    .gmsg.me { flex-direction: row-reverse; } .gmsg.me .who { text-align: right; } .gmsg.me .col { text-align: right; }
+    .gmsg.me .body { background: #1f2640; text-align: left; }
+    .gmsg.bot .body { background: #173328; border-color: #2c6b52; }
+    .gmsg.staff .body { background: #2e2a1a; border-color: #6b5a2c; }
+    .gmsg.notify .body { background: #3a2415; border-color: #a0592a; }
+    .gmsg .col { min-width: 0; }
+    .sysmsg { text-align: center; margin: 4px auto 14px; font-size: 12px; color: var(--muted); }
+    .sysmsg span { background: var(--panel2); padding: 2px 10px; border-radius: 99px; }
+    .card-msg { display: flex; align-items: flex-start; gap: 10px; width: 300px; background: #fff; color: #222; border-radius: 10px; padding: 12px; text-align: left; }
+    .card-msg .card-main { flex: 1; min-width: 0; }
+    .card-msg b { display: block; margin-bottom: 4px; } .card-msg .muted { color: #777; }
+    .card-msg a { color: #2d6cdf; font-size: 12px; word-break: break-all; }
+    .card-msg .card-doctor { font-size: 12px; color: #4a5568; margin-bottom: 4px; }
+    .card-av { width: 56px; height: 56px; flex-shrink: 0; border-radius: 8px; object-fit: cover; background: #eef3ff; border: 1px solid #e3ebfa; }
+    .gmsg.fd .body { background: #10263d; border-color: #2f6fa8; }
+    /* 会话历史：群列表（搜索 / 分页 / 多选删除 / 最近一条消息预览） */
+    .glist { max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); }
+    .gitem { display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; cursor: pointer; border-bottom: 1px dashed var(--border); }
+    .gitem:last-child { border-bottom: none; }
+    .gitem:hover { background: var(--panel2); }
+    .gitem.cur { background: #1d2740; box-shadow: inset 2px 0 0 var(--primary); }
+    .gitem .gck { width: auto; margin: 3px 0 0; flex-shrink: 0; accent-color: var(--primary); }
+    .gitem .gbody { min-width: 0; flex: 1; }
+    .gitem .gt { font-size: 12.5px; display: flex; gap: 6px; align-items: baseline; }
+    .gitem .gt b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .gitem .gp { font-size: 11.5px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .att { display: block; margin-top: 6px; font-size: 12px; }
+    .att img { max-width: 220px; max-height: 180px; border-radius: 6px; display: block; margin-top: 4px; }
+    .step { border: 1px solid var(--border); border-radius: 8px; margin: 6px 0; background: var(--panel2); font-size: 12px; }
+    .step summary { padding: 6px 10px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+    .step pre { margin: 0; padding: 8px 10px; white-space: pre-wrap; word-break: break-word; max-height: 360px;
+      overflow-y: auto; color: var(--muted); border-top: 1px dashed var(--border); font-size: 11.5px; }
+    .step.hl summary { color: #9fb3ff; }
+    .run-head { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; }
+    /* 历史执行记录（刷新后从 MySQL 恢复）：一次执行一个块，本次页面新产生的执行会追加在它们上方 */
+    .run-block { border-top: 1px dashed var(--border); margin-top: 10px; padding-top: 6px; }
+    .run-block .run-head { margin: 0 0 4px; padding: 0; border: none; color: var(--muted); }
+    .composer .tools-row { max-width: 860px; margin: 0 auto 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .composer .tools-row select, .composer .tools-row input[type=text] { width: auto; padding: 4px 8px; }
+    .chip-att { background: var(--panel2); border: 1px solid var(--border); border-radius: 99px; padding: 1px 8px; font-size: 12px; }
+    .pending-item { font-size: 12px; border-bottom: 1px dashed var(--border); padding: 4px 0; }
+    .tag { font-size: 11px; padding: 0 6px; border-radius: 99px; border: 1px solid var(--border); }
+    .tag.running, .tag.pending { color: var(--warn); } .tag.replied { color: var(--ok); } .tag.notified, .tag.handover { color: #f08a4b; }
+  </style>
+</head>
+<body>
+<div class="wx">
+  <aside class="sidebar">
+    <h1><i class="ic" data-icon="users"></i>企微群回复 Agent</h1>
+    <div class="brand-sub">模拟企业微信患者服务群，手动测试回复流程</div>
+    <div class="nav">
+      <a href="/"><i class="ic" data-icon="chat"></i>对话</a>
+      <a href="/?scenario=consult"><i class="ic" data-icon="stethoscope"></i>问诊</a>
+      <a href="/wecom" class="active"><i class="ic" data-icon="users"></i>企微群</a>
+      <a href="/eval"><i class="ic" data-icon="chart"></i>测试</a>
+    </div>
+    <div id="dbWarn" class="warn-box" style="display:none">
+      MySQL 未连接：执行 <code>make mysql-up</code> 后点 <button id="dbInit" class="sm">重试连接</button></div>
+
+    <div class="section">
+      <div class="section-title"><i class="ic" data-icon="users"></i>群 / 会话历史 <span class="spacer"></span><span class="muted" id="gCount"></span></div>
+      <div class="row"><input id="gSearch" placeholder="搜群名 / ID / 患者 / 消息内容" /><button id="newGroup" class="icon-btn" title="新建测试群"><i class="ic" data-icon="plus"></i></button></div>
+      <div id="groupList" class="glist" style="margin-top:6px"><div class="muted" style="padding:8px">加载中…</div></div>
+      <div class="row" style="margin-top:6px">
+        <button id="gPrev" class="sm">上一页</button>
+        <span class="muted" id="gPage" style="flex:1;text-align:center"></span>
+        <button id="gNext" class="sm">下一页</button>
+      </div>
+      <div class="row" style="margin-top:4px">
+        <button id="gDel" class="sm danger"><i class="ic" data-icon="trash"></i>删除选中</button>
+        <span class="muted" id="gSelInfo"></span>
+      </div>
+      <label style="margin-top:8px">群名称</label><input id="gName" />
+      <div class="row">
+        <div style="flex:1"><label>病历经理 ID</label><input id="gCmId" /></div>
+        <div style="flex:1"><label>病历经理名称</label><input id="gCmName" /></div>
+      </div>
+      <label>基础信息（患者档案 / 服务包）</label>
+      <textarea id="gProfile" rows="5" placeholder="例：患者王某，68岁男，2型糖尿病10年、高血压；二甲双胍 0.5g bid，氨氯地平 5mg qd；青霉素过敏"></textarea>
+      <div class="row" style="margin-top:8px"><button id="saveGroup"><i class="ic" data-icon="check"></i>保存群信息</button><button id="clearGroup"><i class="ic" data-icon="trash"></i>清空聊天记录</button></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><i class="ic" data-icon="layers"></i>聊天压缩记录</div>
+      <div class="muted" id="summaryMeta"></div>
+      <details style="margin-top:4px"><summary class="muted" style="cursor:pointer">查看摘要</summary>
+        <pre id="summary" style="white-space:pre-wrap;font-size:12px;color:var(--muted)"></pre></details>
+      <button id="compress" style="margin-top:8px"><i class="ic" data-icon="zap"></i>立即压缩（Summarization）</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><i class="ic" data-icon="clock"></i>待回复记录 <span class="spacer"></span> <span class="muted" id="timeoutInfo"></span></div>
+      <div id="pending" class="muted"></div>
+      <button id="checkTimeout" style="margin-top:8px"><i class="ic" data-icon="play"></i>立即执行超时检查</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><i class="ic" data-icon="history"></i>中断的执行（checkpoint 续跑）</div>
+      <div id="interrupted" class="muted">无</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><i class="ic" data-icon="listChecks"></i>批量评测（AI 效果）</div>
+      <div class="muted" id="evalMeta">加载中…</div>
+      <div class="row" style="margin-top:6px">
+        <button id="evalGoto"><i class="ic" data-icon="chart"></i>打开评测报告页</button>
+        <button id="evalRun" class="sm"><i class="ic" data-icon="play"></i>跑一轮</button>
+      </div>
+      <div class="muted" style="margin-top:4px">用例在 <code>eval/wecom/**/*.md</code>（目录 = 测试集合），跑批会真实调模型</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><i class="ic" data-icon="fileText"></i>提示词调试（临时覆盖）</div>
+      <label>节点</label><select id="ovName"></select>
+      <textarea id="ovText" rows="8" placeholder="留空 = 使用 Langfuse production 版本 / 本地默认"></textarea>
+      <div class="row" style="margin-top:8px"><button id="ovLoad"><i class="ic" data-icon="download"></i>载入当前版本</button><button id="ovClear"><i class="ic" data-icon="x"></i>清除覆盖</button></div>
+      <div id="ovInfo" class="muted" style="margin-top:4px"></div>
+      <div class="muted" style="margin-top:4px">调好后到 <a href="/playground">调试台</a> 或对话页保存为 Langfuse 新版本</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><i class="ic" data-icon="stethoscope"></i>就医规划卡</div>
+      <div class="muted">急救 / 当日就医 / 门诊 / 居家观察各形态</div>
+      <button id="planPreview" style="margin-top:8px"><i class="ic" data-icon="eye"></i>打开样式预览</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div><b id="title">群聊</b> <span class="muted" id="topMeta"></span></div>
+      <label class="row muted" style="margin:0"><input type="checkbox" id="autoRefresh" checked /> 自动刷新</label>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="composer">
+      <div class="tools-row">
+        <span class="muted">发送身份</span>
+        <select id="role">
+          <option value="patient">患者</option><option value="family">家属</option>
+          <option value="case_manager">病历经理</option><option value="doctor">医生</option>
+        </select>
+        <input type="text" id="senderName" placeholder="昵称" style="width:110px" />
+        <label class="row muted" style="margin:0"><input type="checkbox" id="forceReply" /> 跳过“是否需要回复”判断</label>
+        <button id="attachBtn"><i class="ic" data-icon="paperclip"></i>图片/PDF/文档</button>
+        <input type="file" id="file" multiple hidden accept="image/*,.pdf,.docx,.txt,.md,.csv" />
+        <span id="attList"></span>
+      </div>
+      <div class="box">
+        <textarea id="input" rows="1" placeholder="以当前身份在群里发消息，Enter 发送，Shift+Enter 换行"></textarea>
+        <button class="primary" id="send" title="可以连续发送：回复发出前的新消息会合并回复"><i class="ic" data-icon="arrowUp"></i><span>发送</span></button>
+      </div>
+      <div class="tools-row muted" style="margin-top:8px" id="samples"></div>
+    </div>
+  </main>
+
+  <aside class="trace">
+    <div class="row" style="justify-content:space-between"><b><i class="ic" data-icon="activity"></i>Agent 执行过程</b><a id="traceLink" target="_blank" class="muted"></a></div>
+    <div class="muted">每个节点的输入判断 / 输出，点开查看详情</div>
+    <div id="trace"></div>
+  </aside>
+</div>
+
+<script src="/static/common.js?v=2"></script>
+<script>
+const ROLE = { patient: "患者", family: "家属", case_manager: "病历经理", doctor: "医生", assistant: "助手", system: "系统" };
+const ICON = { patient: icon("user"), family: icon("family"), case_manager: icon("staff"), doctor: icon("doctor"), assistant: icon("bot") };
+const SAMPLES = [
+  "最近血糖有点高，空腹 8.9，要紧吗？", "我想把二甲双胍停了，吃着胃不舒服", "帮我找个内分泌科医生看看",
+  "我爸突然说话不清楚，右手没力气", "上次买的试纸什么时候发货？", "头疼", "好的谢谢",
+  "司美格鲁肽现在医保能报吗？", "上次医生说的那个药叫什么来着？",
+];
+const st = { gid: localStorage.getItem("wecom:gid"), lastId: 0, rendered: new Set(), refreshing: null, busy: false, atts: [], runLimit: 10,
+  q: "", page: 0, pageSize: 8, gtotal: 0, gsel: new Set(), ov: JSON.parse(localStorage.getItem("wecom:ov") || "{}") };
+
+function esc2(s) { return esc(s).replace(/@(\S+)/g, '<b style="color:#6c8cff">@$1</b>'); }
+
+// 当前发送身份对应的 sender_id（发送和“是否是我发的”判断共用，刷新后也能正确判断）
+function myIdentity() {
+  const role = $("#role").value;
+  const name = $("#senderName").value || ROLE[role];
+  const id = role === "case_manager" && $("#gCmId").value ? $("#gCmId").value : `${role}_${name}`;
+  return { role, name, id };
+}
+
+function renderMsg(m) {
+  if (st.rendered.has(m.id)) return;  // 按消息 id 去重，避免并发刷新重复渲染
+  st.rendered.add(m.id);
+  $("#messages .empty")?.remove();
+  const box = $("#messages");
+  const kind = m.extra?.kind;
+  if (m.sender_role === "system") {
+    box.insertAdjacentHTML("beforeend", `<div class="sysmsg"><span>${icon("info")} ${esc(m.content)}</span></div>`); return;
+  }
+  const isFd = !!(m.extra && (m.extra.fd || m.extra.kind === "plan_card"));
+  const me = m.sender_id === myIdentity().id;
+  const cls = m.sender_role === "assistant" ? (kind === "notify" ? "bot notify" : (isFd ? "bot fd" : "bot"))
+    : ["case_manager", "doctor"].includes(m.sender_role) ? "staff" : "";
+  let body;
+  if (m.msg_type === "plan_card") {
+    body = planCardHTML(m.extra, m.content);
+  } else if (m.msg_type === "doctor_card") {
+    const c = m.extra.card || {};
+    // 头像加载失败时直接移除，避免卡片里出现一个空白方块
+    const av = c.avatar ? `<img class="card-av" src="${esc(c.avatar)}" alt="医生头像" onerror="this.remove()">` : "";
+    const doc = c.doctor_name ? `<div class="card-doctor">${icon("doctor")} ${esc(c.doctor_name)}</div>` : "";
+    body = `<div class="card-msg"><div class="card-main">${doc}<b>${icon("stethoscope")} ${esc(c.title)}</b><div class="muted">${esc(c.description)}</div><a href="${esc(c.url)}" target="_blank">${esc(c.url)}</a></div>${av}</div>`;
+  } else {
+    body = `<div class="body">${kind === "guide" ? `${icon("bulb")} ` : kind === "notify" ? `${icon("bell")} ` : ""}${esc2(m.content)}${(m.attachments || []).map((a) =>
+      a.kind === "image" ? `<a class="att" href="${a.url}" target="_blank">${icon("image")} ${esc(a.name)}<img src="${a.url}"></a>`
+        : `<a class="att" href="${a.url}" target="_blank">${icon("file")} ${esc(a.name)}</a>`).join("")}</div>`;
+  }
+  const tagRun = m.run_id ? ` · <a href="#" data-run="${m.run_id}">run</a>` : "";
+  box.insertAdjacentHTML("beforeend", `<div class="gmsg ${cls} ${me ? "me" : ""}">
+    <div class="avatar">${ICON[m.sender_role] || icon("user")}</div>
+    <div class="col"><div class="who">${esc(m.sender_name)} · ${ROLE[m.sender_role] || m.sender_role} · ${m.created_at.slice(11)}${tagRun}</div>${body}</div></div>`);
+}
+
+// 串行刷新：同一时间只有一个拉取请求，后来的调用排在它后面
+function refreshMessages(reset = false) {
+  const prev = st.refreshing || Promise.resolve();
+  st.refreshing = prev.catch(() => {}).then(() => _refreshMessages(reset));
+  return st.refreshing;
+}
+
+async function _refreshMessages(reset) {
+  if (!st.gid) return;
+  if (reset) { st.lastId = 0; st.rendered.clear(); $("#messages").innerHTML = ""; }
+  const gid = st.gid;
+  const { items } = await api(`/api/wecom/groups/${gid}/messages?after_id=${st.lastId}`);
+  if (gid !== st.gid) return;  // 期间切换了群
+  items.forEach((m) => { renderMsg(m); st.lastId = Math.max(st.lastId, m.id); });
+  if (items.length) $("#messages").scrollTop = 1e9;
+  if (reset && !items.length) $("#messages").innerHTML = '<div class="empty"><h2>群里还没有消息</h2><div>选择身份，发一条消息试试</div></div>';
+}
+
+async function refreshInterrupted() {
+  const { items } = await api(`/api/wecom/runs?status=interrupted,failed&group_id=${st.gid}`);
+  $("#interrupted").innerHTML = items.map((r) => `<div class="pending-item">
+      <span class="tag notified">${r.status}</span> 消息 ${(r.message_ids || []).map((i) => "#" + i).join(" ")} · ${r.created_at.slice(11)}
+      ${r.resume_count ? `· 已续跑 ${r.resume_count} 次` : ""}<br>
+      <span class="muted">已完成：${esc((r.done_nodes || []).join(" → ") || "无")}</span><br>
+      <span style="color:var(--err)">${esc((r.error || "").slice(0, 80))}</span><br>
+      <button data-resume="${r.id}" class="sm">${icon("play")}从断点续跑</button> <a href="#" data-run="${r.id}">详情</a></div>`).join("") || "无";
+  $("#interrupted").querySelectorAll("[data-resume]").forEach((b) => b.onclick = async () => {
+    b.disabled = true; b.textContent = "续跑中…";
+    try { await api(`/api/wecom/runs/${b.dataset.resume}/resume`, { method: "POST" }); }
+    catch (e) { alert("续跑失败：" + e.message); b.disabled = false; b.innerHTML = `${icon("play")}从断点续跑`; }
+  });
+  $("#interrupted").querySelectorAll("[data-run]").forEach((a) => a.onclick = (e) => { e.preventDefault(); showRun(a.dataset.run); });
+}
+
+async function refreshSide() {
+  if (!st.gid) return;
+  refreshInterrupted().catch(() => {});
+  const [g, p] = await Promise.all([api(`/api/wecom/groups/${st.gid}`), api(`/api/wecom/groups/${st.gid}/pending`)]);
+  $("#summary").textContent = g.summary || "（暂无，未压缩消息达到阈值后自动生成）";
+  $("#summaryMeta").textContent = `已压缩到消息 #${g.summary_until_id}${g.summary_updated_at ? " · " + g.summary_updated_at.replace("T", " ") : ""}${g.doctor_card_pushed_at ? " · 医生卡片已推送" : ""}`;
+  $("#pending").innerHTML = p.items.slice(0, 8).map((x) => `<div class="pending-item"><span class="tag ${x.status}">${x.status}</span> 消息#${x.message_id} · ${x.created_at.slice(11)} ${x.resolved_by ? "· by " + esc(x.resolved_by) : ""}</div>`).join("") || "无";
+}
+
+function fillGroupForm(g) {
+  $("#gName").value = g?.name || ""; $("#gCmId").value = g?.case_manager_id || ""; $("#gCmName").value = g?.case_manager_name || "";
+  $("#gProfile").value = g?.profile || ""; $("#title").textContent = g?.name || st.gid;
+}
+
+// 会话历史：群列表（搜索 / 分页 / 多选删除 / 最近一条消息预览）
+async function loadGroups({select = null, autoSwitch = false} = {}) {
+  const { items, total } = await api(`/api/wecom/groups?limit=${st.pageSize}&offset=${st.page * st.pageSize}&q=${encodeURIComponent(st.q)}`);
+  st.gtotal = total;
+  renderGroups(items, total);
+  if (!items.length) {
+    // 一个群都没有（不是搜索/翻页造成的）：直接建一个测试群
+    if (!st.q && total === 0 && !st.gid) { await createGroup(); }
+    return;
+  }
+  const inPage = items.some((g) => g.group_id === st.gid);
+  const target = select || (autoSwitch && !inPage ? items[0].group_id : null);
+  if (target) await switchGroup(target, items.find((g) => g.group_id === target));
+}
+
+function renderGroups(items, total) {
+  const pages = Math.max(1, Math.ceil(total / st.pageSize));
+  st.page = Math.min(st.page, pages - 1);
+  $("#gCount").textContent = total ? `${total} 个群` : "";
+  $("#gPage").textContent = total ? `第 ${st.page + 1} / ${pages} 页` : "";
+  $("#gPrev").disabled = st.page <= 0;
+  $("#gNext").disabled = st.page >= pages - 1;
+  $("#gSelInfo").textContent = st.gsel.size ? `已选 ${st.gsel.size} 个` : "";
+  $("#groupList").innerHTML = items.length ? items.map((g) => `<div class="gitem ${g.group_id === st.gid ? "cur" : ""}" data-gid="${esc(g.group_id)}">
+      <input type="checkbox" class="gck" data-gid="${esc(g.group_id)}" ${st.gsel.has(g.group_id) ? "checked" : ""} title="选中后可批量删除" />
+      <div class="gbody">
+        <div class="gt"><b>${esc(g.name || g.group_id)}</b><span class="muted">${g.msg_count} 条 · ${g.run_count} 次执行</span></div>
+        <div class="gp">${g.last_preview ? esc((ROLE[g.last_role] || g.last_role || "") + "：" + g.last_preview) : "（暂无消息）"}</div>
+        <div class="muted" style="font-size:11px">${esc(g.group_id)} · ${esc((g.last_at || "").replace("T", " ").slice(5, 16))}</div>
+      </div></div>`).join("") : `<div class="muted" style="padding:8px">没有匹配的群</div>`;
+  $("#groupList").querySelectorAll(".gitem").forEach((el) => {
+    el.onclick = (e) => {
+      if (e.target.classList.contains("gck")) return;   // 勾选不切群
+      switchGroup(el.dataset.gid);
+    };
+  });
+  $("#groupList").querySelectorAll(".gck").forEach((ck) => {
+    ck.onchange = () => {
+      if (ck.checked) st.gsel.add(ck.dataset.gid); else st.gsel.delete(ck.dataset.gid);
+      $("#gSelInfo").textContent = st.gsel.size ? `已选 ${st.gsel.size} 个` : "";
+    };
+  });
+}
+
+async function createGroup() {
+  const gid = "demo-" + Math.random().toString(36).slice(2, 8);
+  await api(`/api/wecom/groups/${gid}`, { method: "PUT", body: JSON.stringify({
+    name: "王叔叔的糖尿病管理群", case_manager_id: "cm_li", case_manager_name: "李经理",
+    profile: "患者：王某，68岁，男\n诊断：2型糖尿病（10年）、高血压\n用药：二甲双胍 0.5g 每日两次；氨氯地平 5mg 每日一次\n过敏史：青霉素\n服务包：糖尿病年度管理（含每月随访）",
+  }) });
+  await loadGroups({select: gid});
+}
+
+async function switchGroup(gid, g) {
+  st.gid = gid; localStorage.setItem("wecom:gid", gid);
+  fillGroupForm(g || await api(`/api/wecom/groups/${gid}`));
+  $("#groupList").querySelectorAll(".gitem").forEach((el) => el.classList.toggle("cur", el.dataset.gid === gid));
+  // 右侧面板：历史执行（MySQL）在下，本次页面新产生的执行实时插到上面
+  $("#trace").innerHTML = '<div id="history"></div>';
+  await refreshMessages(true); await refreshSide();
+  loadRunHistory();
+  connectEvents();
+}
+
+// ---------------------------------------------------------------- trace
+function stepHTML(s) {
+  const d = s.data == null ? "" : typeof s.data === "string" ? s.data : JSON.stringify(s.data, null, 2);
+  const brief = s.data && typeof s.data === "object" && !Array.isArray(s.data)
+    ? ["need_reply", "intent", "label", "route", "need_clarify", "need_web_search", "need_history", "relevant", "status"]
+      .filter((k) => k in s.data).map((k) => `${k}=${typeof s.data[k] === "object" ? JSON.stringify(s.data[k]) : s.data[k]}`).join(" ") : "";
+  return `<details class="step ${["intent", "respond", "need_reply"].includes(s.node) ? "hl" : ""}">
+    <summary><span>${esc(s.title)}<br><span class="muted">${esc(brief)}</span></span><span class="muted">${s.ms != null ? s.ms + "ms" : ""}</span></summary>
+    ${d ? `<pre>${esc(d)}</pre>` : ""}</details>`;
+}
+
+const RUN_STATUS = { done: `${icon("checkCircle")} 已完成`, skipped: `${icon("xCircle")} 无需回复`,
+  merged: `${icon("stop")} 已中断（合并到下一轮）`, cancelled: `${icon("user")} 员工已接手`,
+  failed: `${icon("xCircle")} 执行失败`, interrupted: `${icon("alert")} 执行中断（可续跑）`,
+  running: `${icon("loader", { cls: "spin" })} 处理中` };
+
+// 刷新页面后右侧面板的恢复：执行记录本来就存在 MySQL（wecom_agent_runs），这里把最近几次渲染出来
+async function loadRunHistory(limit = st.runLimit) {
+  const box = $("#history");
+  if (!box || !st.gid) return;
+  const { items } = await api(`/api/wecom/groups/${st.gid}/runs?limit=${limit}`);
+  if (!box.isConnected) return;  // 期间切了群 / 点进了单次详情，结果作废
+  const running = items.filter((r) => r.status === "running");
+  const finished = items.filter((r) => r.status !== "running");
+  box.innerHTML = items.length ? "" : '<div class="muted">还没有执行记录，发一条消息试试</div>';
+  if (running.length) box.insertAdjacentHTML("beforeend", `<div class="muted">${icon("loader", { cls: "spin" })} ${running.length} 次执行还在进行中，节点完成后会实时追加到上面</div>`);
+  finished.forEach((r) => {
+    const el = document.createElement("div");
+    el.className = "run-block";
+    const ids = (r.message_ids?.length ? r.message_ids : [r.message_id]).map((i) => "#" + i).join(" ");
+    el.innerHTML = `<div class="run-head">${esc(r.created_at.slice(11))} · ${RUN_STATUS[r.status] || esc(r.status)}`
+      + `${r.need_reply ? ` · ${esc(r.intent || "")}` : ""} · ${r.latency_ms ?? "-"}ms · 消息 ${ids}`
+      + `${r.resume_count ? ` · 已续跑 ${r.resume_count} 次` : ""} <a href="#" data-run="${r.id}">详情</a></div>`
+      + (r.steps || []).map(stepHTML).join("")
+      + (r.error ? `<p style="color:var(--err)">${esc(r.error)}</p>` : "");
+    box.appendChild(el);
+  });
+  if (items.length >= limit) box.insertAdjacentHTML("beforeend", '<div class="muted"><a href="#" id="moreRuns">显示更多</a></div>');
+  box.querySelectorAll("[data-run]").forEach((a) => a.onclick = (e) => { e.preventDefault(); showRun(a.dataset.run); });
+  $("#moreRuns")?.addEventListener("click", (e) => { e.preventDefault(); loadRunHistory(limit + 10); });
+}
+
+async function showRun(runId) {
+  const [r, cp] = await Promise.all([api(`/api/wecom/runs/${runId}`), api(`/api/wecom/runs/${runId}/checkpoint`).catch(() => ({}))]);
+  const cpInfo = cp.exists ? `<div class="muted">checkpoint：step ${cp.step} · ${cp.next.length ? "下一步 " + cp.next.join(", ") : "已完成"} · 共 ${cp.history.length} 个快照${r.resume_count ? ` · 已续跑 ${r.resume_count} 次` : ""}</div>` : "";
+  $("#trace").innerHTML = `<div class="run-head"><a href="#" id="traceBack">← 返回执行列表</a> · run ${r.id.slice(0, 8)} · ${RUN_STATUS[r.status] || r.status} · ${r.intent || ""} · ${r.latency_ms ?? "-"}ms</div>` + cpInfo +
+    (r.steps || []).map(stepHTML).join("") + (r.error ? `<p style="color:var(--err)">${esc(r.error)}</p>` : "");
+  $("#traceBack").onclick = (e) => { e.preventDefault(); $("#trace").innerHTML = '<div id="history"></div>'; loadRunHistory(); };
+}
+
+// ---------------------------------------------------------------- send
+// 发送不阻塞：消息入库后立即返回，Agent 的执行过程通过群事件流（SSE）推送过来
+async function send(text) {
+  text = (text ?? $("#input").value).trim();
+  if ((!text && !st.atts.length) || !st.gid) return;
+  $("#input").value = ""; $("#input").style.height = "auto";
+  const me = myIdentity();
+  const body = {
+    group_id: st.gid, msg_id: crypto.randomUUID(), sender_id: me.id,
+    sender_name: me.name, sender_role: me.role, content: text, attachments: st.atts,
+    force_reply: $("#forceReply").checked, prompt_overrides: st.ov,
+  };
+  st.atts = []; renderAtts(); $("#input").focus();
+  try {
+    await api("/api/wecom/messages", { method: "POST", body: JSON.stringify(body) });
+  } catch (e) { alert("发送失败：" + e.message); }
+  refreshMessages();
+}
+
+// ---------------------------------------------------------------- 群事件流
+const runs = {};  // run_id -> 右侧面板里的 DOM
+let curRunEl = null;
+function runBox(runId, ids) {
+  if (runId && runs[runId]) return runs[runId];
+  const el = document.createElement("div");
+  el.innerHTML = `<div class="run-head">${icon("loader", { cls: "spin" })} 处理消息 ${(ids || []).map((i) => "#" + i).join(" ")}${ids && ids.length > 1 ? `（合并 ${ids.length} 条）` : ""}…</div>`;
+  $("#trace").prepend(el);
+  if (runId) runs[runId] = el;
+  return el;
+}
+function setTyping(on) {
+  let t = $("#typing");
+  if (!on) { t?.remove(); return; }
+  if (!t) {
+    $("#messages").insertAdjacentHTML("beforeend", `<div id="typing" class="sysmsg"><span>${icon("loader", { cls: "spin" })} 助手正在输入…</span></div>`);
+    $("#messages").scrollTop = 1e9;
+  }
+}
+function note(text, color = "var(--warn)") {
+  $("#trace").insertAdjacentHTML("afterbegin", `<div class="run-head" style="color:${color}">${text}</div>`);
+}
+
+function connectEvents() {
+  st.es?.close();
+  if (!st.gid) return;
+  const es = new EventSource(`/api/wecom/groups/${st.gid}/events`);
+  st.es = es;
+  const on = (name, fn) => es.addEventListener(name, (e) => { try { fn(JSON.parse(e.data)); } catch (err) { console.error(err); } });
+  on("hello", (d) => setTyping(d.running));
+  on("message", () => refreshMessages().then(() => { if ($("#typing")) { setTyping(false); setTyping(true); } }));
+  on("typing", (d) => setTyping(d.on));
+  on("meta", (d) => {
+    curRunEl = runBox(d.run_id, d.message_ids);
+    if (d.resumed) curRunEl.insertAdjacentHTML("beforeend", `<div class="muted">${icon("play")} 从 checkpoint 续跑：跳过已完成的 ${esc(d.completed_nodes.join(" → "))}，从 ${esc(d.resume_from.join(", "))} 继续</div>`);
+    if (d.trace_url) { $("#traceLink").href = d.trace_url; $("#traceLink").textContent = "Langfuse Trace ↗"; }
+  });
+  on("step", (d) => (curRunEl || runBox(null, d.message_ids)).insertAdjacentHTML("beforeend", stepHTML(d)));
+  on("action", () => refreshMessages().then(() => { if ($("#typing")) { setTyping(false); setTyping(true); } }));
+  on("interrupt", (d) => note(`${icon("scissors")} 回复发出前收到新消息：消息 ${d.message_ids.map((i) => "#" + i).join(" ")} 将与新消息合并后重新回复`));
+  on("merged", (d) => { const el = d.run_id && runs[d.run_id]; if (el) el.querySelector(".run-head").innerHTML = `${icon("stop")} 已中断（合并到下一轮）`; });
+  on("handover", (d) => { setTyping(false); note(`${icon("user")} ${esc(d.by)} 已接手${d.message_ids.length ? `，取消未发出的回复（消息 ${d.message_ids.map((i) => "#" + i).join(" ")}）` : ""}`, "var(--ok)"); refreshSide(); });
+  on("done", (d) => {
+    const el = runs[d.run_id] || curRunEl;
+    if (el) el.querySelector(".run-head").innerHTML = `${icon("checkCircle")} ${d.need_reply ? "已回复 · " + (d.route || "") : "无需回复"}${d.message_ids.length > 1 ? ` · 合并 ${d.message_ids.length} 条` : ""} · ${d.latency_ms}ms ${d.trace_url ? `· <a href="${d.trace_url}" target="_blank">trace</a>` : ""}`;
+    $("#topMeta").textContent = d.need_reply ? `上次：${d.route} · ${d.latency_ms}ms` : "上次：无需回复";
+    refreshMessages(); refreshSide(); setTimeout(refreshSide, 8000);
+  });
+  on("error", (d) => { if (d && d.message) { note(`${icon("xCircle")} ${esc(d.message)}${d.resumable ? "（已保存 checkpoint，可在左侧从断点续跑）" : ""}`, "var(--err)"); refreshInterrupted(); } });
+}
+
+function renderAtts() {
+  $("#attList").innerHTML = st.atts.map((a, i) => `<span class="chip-att">${a.kind === "image" ? icon("image") : icon("file")} ${esc(a.name)} <a href="#" data-i="${i}">×</a></span>`).join(" ");
+  $("#attList").querySelectorAll("a").forEach((x) => x.onclick = (e) => { e.preventDefault(); st.atts.splice(+x.dataset.i, 1); renderAtts(); });
+}
+
+$("#attachBtn").onclick = () => $("#file").click();
+$("#file").onchange = async (e) => {
+  for (const f of e.target.files) {
+    const fd = new FormData(); fd.append("file", f);
+    const r = await fetch("/api/wecom/upload", { method: "POST", body: fd });
+    if (!r.ok) { alert("上传失败：" + await r.text()); continue; }
+    st.atts.push(await r.json());
+  }
+  e.target.value = ""; renderAtts();
+};
+
+// ---------------------------------------------------------------- prompt overrides
+function renderOvInfo() {
+  const n = Object.keys(st.ov).length;
+  $("#ovInfo").textContent = n ? `已覆盖：${Object.keys(st.ov).join("、")}` : "未覆盖任何节点";
+  localStorage.setItem("wecom:ov", JSON.stringify(st.ov));
+}
+$("#ovName").onchange = () => { $("#ovText").value = st.ov[$("#ovName").value] || ""; };
+$("#ovText").oninput = () => {
+  const v = $("#ovText").value; if (v.trim()) st.ov[$("#ovName").value] = v; else delete st.ov[$("#ovName").value]; renderOvInfo();
+};
+$("#ovLoad").onclick = async () => {
+  const p = await api(`/api/prompts/${$("#ovName").value}`);
+  $("#ovText").value = p.template; $("#ovText").oninput();
+  $("#ovInfo").textContent = `已载入 ${p.source}${p.version ? " v" + p.version : ""}（编辑后即生效）`;
+};
+$("#ovClear").onclick = () => { delete st.ov[$("#ovName").value]; $("#ovText").value = ""; renderOvInfo(); };
+
+// ---------------------------------------------------------------- init
+async function init() {
+  const c = await api("/api/wecom/config");
+  $("#ovName").innerHTML = c.prompts.map((p) => `<option>${p}</option>`).join("");
+  $("#ovName").onchange(); renderOvInfo();
+  $("#timeoutInfo").textContent = `（${c.timeout_seconds}s 无人回复通知病历经理）`;
+  $("#samples").innerHTML = "试试：" + SAMPLES.map((s) => `<button>${esc(s)}</button>`).join("");
+  $("#samples").querySelectorAll("button").forEach((b) => b.onclick = () => send(b.textContent));
+  if (!c.db_ready) { $("#dbWarn").style.display = ""; return; }
+  $("#role").value = localStorage.getItem("wecom:role") || "patient";
+  $("#senderName").value = localStorage.getItem("wecom:name") || "王叔叔";
+  $("#role").onchange = () => {
+    localStorage.setItem("wecom:role", $("#role").value);
+    const n = { patient: "王叔叔", family: "王叔叔女儿", case_manager: $("#gCmName").value || "李经理", doctor: "张医生" }[$("#role").value];
+    $("#senderName").value = n; localStorage.setItem("wecom:name", n);
+    refreshMessages(true);  // 切换身份：按新身份重新区分左右
+  };
+  $("#senderName").onchange = () => { localStorage.setItem("wecom:name", $("#senderName").value); refreshMessages(true); };
+  await loadGroups({select: st.gid, autoSwitch: true});
+  refreshEvalMeta();
+  setInterval(() => { if ($("#autoRefresh").checked) { refreshMessages(); refreshSide(); } }, 5000);
+}
+
+// ---------------------------------------------------------------- 会话历史：搜索 / 翻页 / 批量删除 / 评测入口
+let gsTimer = null;
+function gSearch() { st.q = $("#gSearch").value.trim(); st.page = 0; loadGroups(); }
+$("#gSearch").addEventListener("input", () => { clearTimeout(gsTimer); gsTimer = setTimeout(gSearch, 250); });
+$("#gPrev").onclick = () => { if (st.page > 0) { st.page--; loadGroups(); } };
+$("#gNext").onclick = () => { st.page++; loadGroups(); };
+$("#gDel").onclick = async () => {
+  const ids = [...st.gsel];
+  if (!ids.length) { alert("先在列表里勾选要删除的群"); return; }
+  if (!confirm(`删除选中的 ${ids.length} 个群？会连同消息、执行记录、checkpoint 一起删除，不可恢复。`)) return;
+  const r = await api("/api/wecom/groups/delete", { method: "POST", body: JSON.stringify({ group_ids: ids }) });
+  st.gsel.clear();
+  if (ids.includes(st.gid)) st.gid = null;      // 删到当前群：自动切到列表第一条
+  await loadGroups({select: st.gid, autoSwitch: true});
+  if (!r.removed) alert("没有群被删除");
+};
+$("#evalGoto").onclick = () => { location.href = "/wecom-eval"; };
+$("#evalRun").onclick = async (e) => {
+  e.target.disabled = true;
+  try {
+    await api("/api/wecom/evals/run?limit=3", { method: "POST" });   // 快速跑前 3 条，完整跑批在评测页
+    alert("已开始跑批（前 3 条用例，每个用例一个临时群）。进度与结果看评测报告页。");
+    location.href = "/wecom-eval";
+  } catch (err) { alert("启动失败：" + err.message); }
+  e.target.disabled = false;
+};
+
+async function refreshEvalMeta() {
+  try {
+    const [{ evals }, stt] = await Promise.all([api("/api/wecom/evals?limit=1"), api("/api/wecom/evals/run/status")]);
+    const last = evals[0];
+    const running = stt.status === "running" ? ` · 正在跑：${stt.done}/${stt.total}（${esc(stt.current || "")}）` : "";
+    $("#evalMeta").innerHTML = (last ? `最近一轮：${esc(last.created_at)} · <b class="${last.passed === last.total ? "ok" : "bad"}">${last.passed}/${last.total} 通过</b>（${esc(last.set_label || "")}）` : "还没跑过评测") + running;
+  } catch (e) { $("#evalMeta").textContent = "评测状态读取失败"; }
+}
+
+$("#planPreview").onclick = () => { location.href = "/wecom-plan"; };
+$("#newGroup").onclick = createGroup;
+$("#saveGroup").onclick = async () => {
+  const g = await api(`/api/wecom/groups/${st.gid}`, { method: "PUT", body: JSON.stringify({
+    name: $("#gName").value, case_manager_id: $("#gCmId").value, case_manager_name: $("#gCmName").value, profile: $("#gProfile").value }) });
+  await loadGroups({select: g.group_id});
+};
+$("#clearGroup").onclick = async () => {
+  if (!confirm("清空该群的消息、摘要、文件、待回复记录？")) return;
+  await api(`/api/wecom/groups/${st.gid}/messages`, { method: "DELETE" }); await switchGroup(st.gid);
+};
+$("#compress").onclick = async (e) => {
+  e.target.disabled = true; e.target.textContent = "压缩中…";
+  try { const r = await api(`/api/wecom/groups/${st.gid}/compress?force=true`, { method: "POST" });
+    if (!r.compressed) alert(r.reason); } catch (err) { alert(err.message); }
+  e.target.disabled = false; e.target.textContent = "立即压缩（LangChain Summarization）"; refreshSide();
+};
+$("#checkTimeout").onclick = async () => {
+  const r = await api("/api/wecom/jobs/check-timeout", { method: "POST" });
+  if (!r.notified.length) alert("没有超时的待回复记录");
+  refreshMessages(); refreshSide();
+};
+$("#dbInit").onclick = async () => { const r = await api("/api/wecom/db/init", { method: "POST" }); if (r.ok) location.reload(); else alert("仍然连接失败"); };
+$("#messages").addEventListener("click", (e) => { const r = e.target.dataset?.run; if (r) { e.preventDefault(); showRun(r); } });
+$("#send").onclick = () => send();
+$("#input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } });
+$("#input").addEventListener("input", (e) => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; });
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+[
+  {
+    "name": "ui-progress",
+    "src": "/Users/barry/.betterwright/artifacts/85b42e1702877c85/debug-1791480206082-f58345.png",
+    "rect": {
+      "x": 340,
+      "y": 18,
+      "w": 1259,
+      "h": 100
+    },
+    "patch": [
+      {
+        "x": 330,
+        "y": 30,
+        "w": 83,
+        "h": 32,
+        "color": [
+          15,
+          17,
+          22
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ui-steps",
+    "src": "/Users/barry/.betterwright/artifacts/85b42e1702877c85/debug-1791480207766-b3093d.png",
+    "rect": {
+      "x": 590,
+      "y": 187,
+      "w": 722,
+      "h": 655
+    }
+  },
+  {
+    "name": "ui-triage",
+    "src": "/Users/barry/.betterwright/artifacts/85b42e1702877c85/debug-1791480209008-420881.png",
+    "rect": {
+      "x": 590,
+      "y": 215,
+      "w": 722,
+      "h": 578
+    }
+  },
+  {
+    "name": "ui-diagnosis",
+    "src": "/Users/barry/.betterwright/artifacts/85b42e1702877c85/debug-1791480239809-dc3d29.png",
+    "rect": {
+      "x": 590,
+      "y": 115,
+      "w": 722,
+      "h": 778
+    }
+  },
+  {
+    "name": "ui-eval",
+    "src": "/Users/barry/.betterwright/artifacts/85b42e1702877c85/debug-1791480284243-445d0f.png",
+    "rect": {
+      "x": 300,
+      "y": 55,
+      "w": 1362,
+      "h": 450
+    }
+  },
+  {
+    "name": "ui-trace",
+    "src": "/Users/barry/.betterwright/artifacts/85b42e1702877c85/pi-observation-1791483615122-bd08b3.png",
+    "rect": {
+      "x": 205,
+      "y": 124,
+      "w": 955,
+      "h": 676
+    }
+  }
+]
